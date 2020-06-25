@@ -25,6 +25,9 @@ namespace Xrm.Oss.PowerKanban
 
         [DataMember(Name = "notifyCurrentUser")]
         public bool NotifyCurrentUser { get; set; }
+
+        [DataMember(Name = "capturedFields")]
+        public List<string> CapturedFields { get; set; }
     }
     
     public enum EventType {
@@ -37,15 +40,10 @@ namespace Xrm.Oss.PowerKanban
 
     public class CreateNotification : IPlugin
     {
-        private readonly string unsecureConfig;
-        private readonly string secureConfig;
         private readonly CreateNotificationConfig config;
 
         public CreateNotification(string unsecure, string secure)
         {
-            unsecureConfig = unsecure;
-            secureConfig = secure;
-
             config = JsonDeserializer.Parse<CreateNotificationConfig>(unsecure);
         }
 
@@ -86,6 +84,18 @@ namespace Xrm.Oss.PowerKanban
             }
         }
 
+        private T GetValue<T> (string attribute, Entity target, EntityImageCollection preImages)
+        {
+            if (string.IsNullOrEmpty(attribute))
+            {
+                return default(T);
+            }
+
+            return target.Contains(attribute)
+                ? target.GetAttributeValue<T>(attribute)
+                : preImages.Select(p => p.Value.GetAttributeValue<T>(config.ParentLookupName)).FirstOrDefault();
+        }
+
         public void Execute(IServiceProvider serviceProvider)
         {
             var context = serviceProvider.GetService(typeof(IPluginExecutionContext)) as IPluginExecutionContext;
@@ -101,17 +111,25 @@ namespace Xrm.Oss.PowerKanban
                 return;
             }
 
-            var attributes = target != null ? target.Attributes.Keys.ToList() : null;
+            var attributes = target != null
+                ? target.Attributes.Keys.ToList()
+                : null;
+
+            var filteredAttributes = config.CapturedFields != null
+                ? attributes.Where(a => config.CapturedFields.Any(f => string.Equals(a, f, StringComparison.InvariantCultureIgnoreCase))).ToList()
+                : attributes;
 
             var eventData = new EventData
             {
-                UpdatedFields = attributes,
+                UpdatedFields = filteredAttributes,
                 EventRecordReference = target?.ToEntityReference() ?? targetRef
             };
 
-            var parent = string.IsNullOrEmpty(config.ParentLookupName) ? eventData.EventRecordReference : context.PreEntityImages.Values.Select(p => p.GetAttributeValue<EntityReference>(config.ParentLookupName)).FirstOrDefault(e => e != null);
+            var eventTarget = string.IsNullOrEmpty(config.ParentLookupName) && eventData.EventRecordReference.Id != Guid.Empty
+                ? eventData.EventRecordReference
+                : GetValue<EntityReference>(config.ParentLookupName, target, context.PreEntityImages);
 
-            if (parent == null) {
+            if (eventTarget == null) {
                 crmTracing.Trace("Failed to find parent, exiting");
                 return;
             }
@@ -121,7 +139,7 @@ namespace Xrm.Oss.PowerKanban
                     .Attribute(a => a
                         .Named(config.SubscriptionLookupName)
                         .Is(ConditionOperator.Equal)
-                        .To(eventData.EventRecordReference.Id)
+                        .To(eventTarget.Id)
                     )
                     .Attribute(a => a
                         .Named("statecode")
@@ -153,7 +171,7 @@ namespace Xrm.Oss.PowerKanban
                     Attributes = {
                         ["ownerid"] = subscription.GetAttributeValue<EntityReference>("ownerid"),
                         ["oss_event"] = new OptionSetValue((int) eventType),
-                        [config.NotificationLookupName] = parent,
+                        [config.NotificationLookupName] = eventTarget,
                         ["oss_data"] = serializedNotification
                     }
                 };
