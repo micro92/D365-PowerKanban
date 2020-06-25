@@ -11,9 +11,9 @@
     "secondaryEntity": {
         "allowTransitions": true,
         "logicalName": "incident",
-        "notificationLookup": "oss_taskid",
+        "notificationLookup": "oss_incidentid",
         "parentLookup": "customerid",
-        "subscriptionLookup": "oss_taskid",
+        "subscriptionLookup": "oss_incidentid",
         "swimLaneSource": "statuscode",
         "transitionCallback": "boardViewExtender.onStateTransition"
     },

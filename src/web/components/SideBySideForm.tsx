@@ -1,8 +1,9 @@
 import * as React from "react";
 import { useAppContext } from "../domain/AppState";
 import { Button } from "react-bootstrap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
-import { fetchData, refresh } from "../domain/fetchData";
+import { refresh } from "../domain/fetchData";
 import { useActionDispatch, useActionContext } from "../domain/ActionState";
 import { useConfigDispatch, useConfigState } from "../domain/ConfigState";
 
@@ -41,9 +42,9 @@ export const SideBySideForm = (props: FormProps) => {
 
   return (
       <div style={{ position: "relative", width: "100%", height: "100%" }}>
-        <Button title="Close" onClick={closeSideBySide} style={{ position: "absolute", top: "calc(50% - 40px)", left: "-18px" }}><span><i className="fa fa-window-close" aria-hidden="true"></i></span></Button>
-        <Button title="Close and refresh" onClick={closeAndRefresh} style={{ position: "absolute", top: "50%", left: "-18px" }}><span><i className="fa fa-sync" aria-hidden="true"></i></span></Button>
-        <Button title="Open in new window" onClick={openInNewTab} style={{ position: "absolute", top: "calc(50% + 40px)", left: "-18px" }}><span><i className="fa fa-window-maximize" aria-hidden="true"></i></span></Button>
+        <Button title="Close" onClick={closeSideBySide} style={{ position: "absolute", top: "calc(50% - 40px)", left: "-18px" }}><FontAwesomeIcon icon="window-close" /></Button>
+        <Button title="Close and refresh" onClick={closeAndRefresh} style={{ position: "absolute", top: "50%", left: "-18px" }}><FontAwesomeIcon icon="sync" /></Button>
+        <Button title="Open in new window" onClick={openInNewTab} style={{ position: "absolute", top: "calc(50% + 40px)", left: "-18px" }}><FontAwesomeIcon icon="window-maximize" /></Button>
         <iframe onLoad={hideNav} ref={_iframe} style={{width: "100%", height: "100%", border: 0}} src={`/main.aspx?app=${configState.appId}&pagetype=entityrecord&etn=${actionState.selectedRecord.entityType}&id=${actionState.selectedRecord.id}`}></iframe>
       </div>
   );

@@ -16,7 +16,7 @@ import { BoardViewConfig, PrimaryEntity, BoardEntity } from "../domain/BoardView
 import { Subscription } from "../domain/Subscription";
 import { useConfigState } from "../domain/ConfigState";
 import { useActionContext, DisplayType, useActionDispatch } from "../domain/ActionState";
-import { useMeasurerDispatch } from "../domain/MeasurerState";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 interface TileProps {
     borderColor: string;
@@ -43,7 +43,6 @@ const TileRender = (props: TileProps) => {
     const appDispatch = useAppDispatch();
     const configState = useConfigState();
     const actionDispatch = useActionDispatch();
-    const measurerDispatch = useMeasurerDispatch();
 
     const secondaryMetadata = configState.secondaryMetadata[configState.config.secondaryEntity.logicalName];
     const secondaryConfig = configState.config.secondaryEntity;
@@ -118,8 +117,6 @@ const TileRender = (props: TileProps) => {
                         actionDispatch({ type: "setWorkIndicator", payload: false });
                     });
                 }
-
-                measurerDispatch.resetMeasurementCache();
             };
 
             asyncEnd(item, monitor);
@@ -157,7 +154,6 @@ const TileRender = (props: TileProps) => {
 
         if (result && result.savedEntityReference) {
             props.refresh();
-            measurerDispatch.resetMeasurementCache();
         }
     };
 
@@ -167,7 +163,7 @@ const TileRender = (props: TileProps) => {
         await WebApiClient.Create({
             entityName: "oss_subscription",
             entity: {
-                [`oss_${props.metadata.LogicalName}id@odata.bind`]: `/${props.metadata.LogicalCollectionName}(${props.data[props.metadata.PrimaryIdAttribute].replace("{", "").replace("}", "")})`
+                [`${props.config.subscriptionLookup}@odata.bind`]: `/${props.metadata.LogicalCollectionName}(${props.data[props.metadata.PrimaryIdAttribute].replace("{", "").replace("}", "")})`
             }
         });
 
@@ -178,7 +174,7 @@ const TileRender = (props: TileProps) => {
 
     const unsubscribe = async () => {
         actionDispatch({ type: "setWorkIndicator", payload: true });
-        const subscriptionsToDelete = props.subscriptions.filter(s => s[`_oss_${props.metadata.LogicalName}id_value`] === props.data[props.metadata.PrimaryIdAttribute]);
+        const subscriptionsToDelete = props.subscriptions.filter(s => s[`_${props.config.subscriptionLookup}_value`] === props.data[props.metadata.PrimaryIdAttribute]);
 
         await Promise.all(subscriptionsToDelete.map(s =>
             WebApiClient.Delete({
@@ -215,9 +211,9 @@ const TileRender = (props: TileProps) => {
         };
     };
 
-    const isSubscribed = React.useMemo(() => props.subscriptions?.some(s => s[`_oss_${props.metadata.LogicalName}id_value`] === props.data[props.metadata.PrimaryIdAttribute]), [props.subscriptions]);
+    const isSubscribed = props.subscriptions && props.subscriptions.length;
 
-    console.log(`Tile ${props.data[props.metadata.PrimaryIdAttribute]} is rerendering`);
+    console.log(`${props.metadata.LogicalName} tile ${props.data[props.metadata.PrimaryIdAttribute]} is rerendering`);
 
     return (
         <div ref={ props.preventDrag ? stub : drag}>
@@ -230,21 +226,21 @@ const TileRender = (props: TileProps) => {
                         { props.config.notificationLookup && props.config.subscriptionLookup && <Dropdown as={ButtonGroup} style={{ display: "initial", margintop: "5px", marginRight: "5px" }}>
                             <Button onClick={showNotifications} variant="outline-secondary">
                                 {
-                                <span>{isSubscribed ? <span><i className="fa fa-bell" aria-hidden="true"></i></span> : <span><i className="fa fa-bell-slash" aria-hidden="true"></i></span> } { props.notifications?.length > 0 && <Badge variant="danger">{props.notifications.length}</Badge> }</span>
+                                <span>{isSubscribed ? <FontAwesomeIcon icon="bell" /> : <FontAwesomeIcon icon="bell-slash" /> } { props.notifications?.length > 0 && <Badge variant="danger">{props.notifications.length}</Badge> }</span>
                                 }
                             </Button>
                             <Dropdown.Toggle split variant="outline-secondary" id="dropdown-split-basic" />
                             <Dropdown.Menu>
-                                <Dropdown.Item as="button" onClick={subscribe}><span><i className="fa fa-bell" aria-hidden="true"></i></span> Subscribe</Dropdown.Item>
-                                <Dropdown.Item as="button" onClick={unsubscribe}><span><i className="fa fa-bell-slash" aria-hidden="true"></i></span> Unsubscribe</Dropdown.Item>
-                                <Dropdown.Item as="button" onClick={clearNotifications}><span><i className="fa fa-eye-slash" aria-hidden="true"></i></span> Mark as read</Dropdown.Item>
-                                <Dropdown.Item as="button" onClick={showNotifications}><span><i className="fa fa-eye" aria-hidden="true"></i></span> Show notifications</Dropdown.Item>
+                                <Dropdown.Item as="button" onClick={subscribe}><FontAwesomeIcon icon="bell" /> Subscribe</Dropdown.Item>
+                                <Dropdown.Item as="button" onClick={unsubscribe}><FontAwesomeIcon icon="bell-slash" /> Unsubscribe</Dropdown.Item>
+                                <Dropdown.Item as="button" onClick={clearNotifications}><FontAwesomeIcon icon="eye-slash" /> Mark as read</Dropdown.Item>
+                                <Dropdown.Item as="button" onClick={showNotifications}><FontAwesomeIcon icon="eye" /> Show notifications</Dropdown.Item>
                             </Dropdown.Menu>
                         </Dropdown>}
-                        <DropdownButton drop="left" id="displaySelector" variant="outline-secondary" title="" style={{ margintop: "5px" }}>
-                            <Dropdown.Item onClick={setSelectedRecord} as="button" id="setSelected"><span><i className="fa fa-angle-double-right" aria-hidden="true"></i></span> Open in split screen</Dropdown.Item>
-                            <Dropdown.Item onClick={openInNewTab} as="button" id="setSelected"><span><i className="fa fa-window-maximize" aria-hidden="true"></i></span> Open in new window</Dropdown.Item>
-                            { configState.config.secondaryEntity && <Dropdown.Item onClick={createNewSecondary} as="button" id="addSecondary"><span><i className="fa fa-plus" aria-hidden="true"></i></span> Create new {secondaryMetadata.DisplayName.UserLocalizedLabel.Label}</Dropdown.Item> }
+                        <DropdownButton id="displaySelector" variant="outline-secondary" title="" style={{ margintop: "5px" }}>
+                            <Dropdown.Item onClick={setSelectedRecord} as="button" id="setSelected"><FontAwesomeIcon icon="angle-double-right" /> Open in split screen</Dropdown.Item>
+                            <Dropdown.Item onClick={openInNewTab} as="button" id="setSelected"><FontAwesomeIcon icon="window-maximize" /> Open in new window</Dropdown.Item>
+                            { configState.config.secondaryEntity && <Dropdown.Item onClick={createNewSecondary} as="button" id="addSecondary"><FontAwesomeIcon icon="plus" /> Create new {secondaryMetadata.DisplayName.UserLocalizedLabel.Label}</Dropdown.Item> }
                             {
                                 props.config.customButtons && props.config.customButtons.length &&
                                 <>
@@ -252,7 +248,6 @@ const TileRender = (props: TileProps) => {
                                     { props.config.customButtons.map(b => <Dropdown.Item key={b.id} id={b.id} as="button" onClick={initCallBack(b.callBack)}>
                                         <>
                                             {b.icon && b.icon.type === "url" && <img src={b.icon.value}></img>}
-                                            {b.icon && b.icon.type === "fa" && <span><i className={b.icon.value}></i></span>}
                                             {" "}{b.label}
                                         </>
                                     </Dropdown.Item>) }
@@ -271,7 +266,7 @@ const TileRender = (props: TileProps) => {
                         <span style={{marginLeft: "5px", fontSize: "larger"}}>
                             {secondaryMetadata.DisplayCollectionName.UserLocalizedLabel.Label}
                         </span>
-                        <Button style={{marginLeft: "5px"}} variant="outline-secondary" onClick={createNewSecondary}><span><i className="fa fa-plus-square" aria-hidden="true"></i></span></Button>
+                        <Button style={{marginLeft: "5px"}} variant="outline-secondary" onClick={createNewSecondary}><FontAwesomeIcon icon="plus-square" /></Button>
                         <div id="flexContainer" style={{ display: "flex", flexDirection: "row", overflow: "auto" }}>
                             {
                                 props.secondaryData.map(d => <Lane
@@ -332,15 +327,15 @@ export const Tile = React.memo(TileRender, (a, b) => {
         return false;
     }
 
-    if (a.notifications?.length != b.notifications?.length) {
+    if ((a.notifications || []).length != (b.notifications || []).length) {
         return false;
     }
 
-    if (a.secondaryData?.length != b.secondaryData?.length) {
+    if ((a.secondaryData || []).length != (b.secondaryData || []).length) {
         return false;
     }
 
-    if (a.subscriptions?.length != b.subscriptions?.length) {
+    if ((a.subscriptions || []).length != (b.subscriptions || []).length) {
         return false;
     }
 

@@ -6,6 +6,6 @@ export const loadExternalScript = (url: string) => {
         scriptTag.async = true;
         scriptTag.onload = resolve;
 
-        document.body.append(scriptTag);
+        document.body.appendChild(scriptTag);
     });
 };

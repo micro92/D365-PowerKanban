@@ -15,9 +15,7 @@ import { DndContainer } from "./DndContainer";
 import { loadExternalScript } from "../domain/LoadExternalScript";
 import { useConfigContext } from "../domain/ConfigState";
 import { useActionContext } from "../domain/ActionState";
-import { List, CellMeasurerCache, CellMeasurer } from "react-virtualized";
-import AutoSizer from "react-virtualized-auto-sizer";
-import { useMeasurerState, useMeasurerContext } from "../domain/MeasurerState";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 const determineAttributeUrl = (attribute: Attribute) => {
   if (attribute.AttributeType === "Picklist") {
@@ -65,9 +63,6 @@ export const Board = () => {
   const [ appState, appDispatch ] = useAppContext();
   const [ actionState, actionDispatch ] = useActionContext();
   const [ configState, configDispatch ] = useConfigContext();
-  const [ measurerState, measurerDispatch ] = useMeasurerContext();
-
-  const advancedList = React.useRef<List>(null);
 
   const [ views, setViews ] = React.useState<Array<SavedQuery>>([]);
   const [ secondaryViews, setSecondaryViews ] = React.useState<Array<SavedQuery>>([]);
@@ -94,7 +89,6 @@ export const Board = () => {
     try {
       appDispatch({ type: "setSecondaryData", payload: [] });
       appDispatch({ type: "setBoardData", payload: [] });
-      measurerDispatch.resetMeasurementCache();
 
       const configId = await getConfigId();
 
@@ -121,8 +115,6 @@ export const Board = () => {
         ? [ attributeMetadata.OptionSet.FalseOption.Value, attributeMetadata.OptionSet.TrueOption.Value ]
         : attributeMetadata.OptionSet.Options.map(o => o.Value);
 
-      measurerDispatch.initializeCaches([ "advanced", ...lanes.map(o => `primary-${o.toString()}`) ]);
-
       const notificationMetadata = await fetchMetadata("oss_notification");
       configDispatch({ type: "setSecondaryMetadata", payload: { entity: "oss_notification", data: notificationMetadata } });
 
@@ -139,8 +131,6 @@ export const Board = () => {
         const secondaryLanes = secondaryAttributeMetadata.AttributeType === "Boolean"
         ? [ secondaryAttributeMetadata.OptionSet.FalseOption.Value, secondaryAttributeMetadata.OptionSet.TrueOption.Value ]
         : secondaryAttributeMetadata.OptionSet.Options.map(o => o.Value);
-
-        measurerDispatch.initializeCaches([ "advanced", ...lanes.map(o => `primary-${o.toString()}`), ...secondaryLanes.map(o => `secondary-${o.toString()}`) ]);
       }
 
       configDispatch({ type: "setConfig", payload: config });
@@ -232,8 +222,6 @@ export const Board = () => {
     }
   };
 
-  React.useEffect(() => void advancedList && advancedList.current && advancedList.current.recomputeRowHeights(), [ measurerState.measurementCaches["advanced"] ]);
-
   React.useEffect(() => {
     initializeConfig();
   }, [ configState.configId ]);
@@ -259,7 +247,6 @@ export const Board = () => {
 
     actionDispatch({ type: "setSelectedView", payload: view });
     refresh(appDispatch, appState, configState, actionDispatch, actionState, view.fetchxml);
-    measurerDispatch.resetMeasurementCache();
   };
 
   const setForm = (event: any) => {
@@ -268,7 +255,6 @@ export const Board = () => {
 
     actionDispatch({ type: "setSelectedForm", payload: form });
     refresh(appDispatch, appState, configState, actionDispatch, actionState, undefined, form);
-    measurerDispatch.resetMeasurementCache();
   };
 
   const setSecondaryView = (event: any) => {
@@ -277,7 +263,6 @@ export const Board = () => {
 
     actionDispatch({ type: "setSelectedSecondaryView", payload: view });
     refresh(appDispatch, appState, configState, actionDispatch, actionState, undefined, undefined, view.fetchxml, undefined);
-    measurerDispatch.resetMeasurementCache();
   };
 
   const setSecondaryForm = (event: any) => {
@@ -286,7 +271,6 @@ export const Board = () => {
 
     actionDispatch({ type: "setSelectedSecondaryForm", payload: form });
     refresh(appDispatch, appState, configState, actionDispatch, actionState, undefined, undefined, undefined, form);
-    measurerDispatch.resetMeasurementCache();
   };
 
   const setStateFilter = (event: any) => {
@@ -313,7 +297,6 @@ export const Board = () => {
   };
 
   const search = () => {
-    measurerDispatch.resetMeasurementCache();
     setAppliedSearch(searchText || undefined);
   };
 
@@ -325,7 +308,6 @@ export const Board = () => {
 
   const refreshBoard = async () => {
     await refresh(appDispatch, appState, configState, actionDispatch, actionState);
-    measurerDispatch.resetMeasurementCache();
   };
 
   const openConfigSelector = () => {
@@ -340,24 +322,30 @@ export const Board = () => {
     return displayState === "advanced" && appState.boardData &&
     appState.boardData.filter(d => !stateFilters.length || stateFilters.some(f => f.Value === d.option.State))
     .map(d => !appliedSearchText ? d : { ...d, data: d.data.filter(data => Object.keys(data).some(k => `${data[k]}`.toLowerCase().includes(appliedSearchText.toLowerCase()))) })
-    .reduce((all, curr) => all.concat(curr.data.filter(d => appState.secondaryData.some(t => t.data.some(tt => tt[`_${configState.config.secondaryEntity.parentLookup}_value`] === d[configState.metadata.PrimaryIdAttribute]))).map(d => <Tile
-      notifications={!appState.notifications ? [] : appState.notifications[d[configState.metadata.PrimaryIdAttribute]]}
-      borderColor={curr.option.Color ?? "#3b79b7"}
-      cardForm={actionState.selectedForm}
-      metadata={configState.metadata}
-      key={`tile_${d[configState.metadata.PrimaryIdAttribute]}`}
-      style={advancedTileStyle}
-      data={d}
-      refresh={refreshBoard}
-      searchText={appliedSearchText}
-      subscriptions={!appState.subscriptions ? [] : appState.subscriptions[d[configState.metadata.PrimaryIdAttribute]]}
-      selectedSecondaryForm={actionState.selectedSecondaryForm}
-      secondaryNotifications={appState.notifications}
-      secondarySubscriptions={appState.subscriptions}
-      config={configState.config.primaryEntity}
-      separatorMetadata={configState.separatorMetadata}
-      preventDrag={true}
-      secondaryData={appState.secondaryData.map(s => ({ ...s, data: s.data.filter(sd => sd[`_${configState.config.secondaryEntity.parentLookup}_value`] === d[configState.metadata.PrimaryIdAttribute])}))} />)), []);
+    .reduce((all, curr) => all.concat(curr.data.filter(d => appState.secondaryData.some(t => t.data.some(tt => tt[`_${configState.config.secondaryEntity.parentLookup}_value`] === d[configState.metadata.PrimaryIdAttribute])))
+    .map(d => {
+      const secondaryData = appState.secondaryData.map(s => ({ ...s, data: s.data.filter(sd => sd[`_${configState.config.secondaryEntity.parentLookup}_value`] === d[configState.metadata.PrimaryIdAttribute])}));
+      
+      return (<Tile
+        notifications={!appState.notifications ? [] : appState.notifications[d[configState.metadata.PrimaryIdAttribute]] ?? []}
+        borderColor={curr.option.Color ?? "#3b79b7"}
+        cardForm={actionState.selectedForm}
+        metadata={configState.metadata}
+        key={`tile_${d[configState.metadata.PrimaryIdAttribute]}`}
+        style={advancedTileStyle}
+        data={d}
+        refresh={refreshBoard}
+        searchText={appliedSearchText}
+        subscriptions={!appState.subscriptions ? [] : appState.subscriptions[d[configState.metadata.PrimaryIdAttribute]] ?? []}
+        selectedSecondaryForm={actionState.selectedSecondaryForm}
+        secondaryNotifications={appState.notifications}
+        secondarySubscriptions={appState.subscriptions}
+        config={configState.config.primaryEntity}
+        separatorMetadata={configState.separatorMetadata}
+        preventDrag={true}
+        secondaryData={secondaryData} />
+      );
+    })), []);
   }, [displayState, appState.boardData, appState.secondaryData, stateFilters, appliedSearchText, appState.notifications, appState.subscriptions, actionState.selectedSecondaryForm, configState.configId]);
 
   const simpleData = React.useMemo(() => {
@@ -377,27 +365,6 @@ export const Board = () => {
       lane={{...d, data: d.data.filter(r => displayState === "simple" || appState.secondaryData && appState.secondaryData.every(t => t.data.every(tt => tt[`_${configState.config.secondaryEntity.parentLookup}_value`] !== r[configState.metadata.PrimaryIdAttribute])))}} />);
   }, [appState.boardData, appState.subscriptions, stateFilters, appState.secondaryData, appliedSearchText, appState.notifications, configState.configId]);
 
-  const rowRenderer = ({key, index, parent, isScrolling, isVisible, style}: {
-    key: string;
-    index: number;
-    parent: any;
-    isScrolling: boolean;
-    isVisible: boolean;
-    style: React.CSSProperties
-  }) => (
-    <CellMeasurer
-        cache={measurerState.measurementCaches["advanced"]}
-        columnIndex={0}
-        key={key}
-        parent={parent}
-        rowIndex={index}
-    >
-      <div style={style}>
-        { advancedData[index] }
-      </div>
-    </CellMeasurer>
-  );
-
   return (
     <div style={{height: "100%", display: "flex", flexDirection: "column" }}>
       <UserInputModal title="Verify Deletion" yesCallBack={deleteRecord} finally={hideDeletionVerification} show={showDeletionVerification}>
@@ -406,7 +373,7 @@ export const Board = () => {
       <Navbar bg="light" variant="light">
         <Navbar.Collapse id="basic-navbar-nav" className="justify-content-between">
           <Nav className="pull-left">
-            <Button title="Config Selector" onClick={openConfigSelector} variant="outline-primary"><span><i className="fa fa-th" aria-hidden="true"></i></span></Button>
+            <Button title="Config Selector" onClick={openConfigSelector} variant="outline-primary"><FontAwesomeIcon icon="th" /></Button>
             <DropdownButton style={{marginLeft: "5px"}} variant="outline-primary" id="viewSelector" title={<>{actionState.selectedView?.name} <Badge variant="primary">{appState?.boardData?.reduce((count, l) => count + l.data.length, 0)}</Badge></> ?? "Select view"}>
               { views?.map(v => <Dropdown.Item onClick={setView} as="button" id={v.savedqueryid} key={v.savedqueryid}>{v.name}</Dropdown.Item>) }
             </DropdownButton>
@@ -440,7 +407,7 @@ export const Board = () => {
                 placeholder="Filter records"
               />
               <InputGroup.Append>
-                <Button variant="outline-secondary" onClick={search}><span><i className="fa fa-search" aria-hidden="true"></i></span></Button>
+                <Button variant="outline-secondary" onClick={search}><FontAwesomeIcon icon="search" /></Button>
               </InputGroup.Append>
             </InputGroup>
           </Nav>
@@ -456,42 +423,25 @@ export const Board = () => {
               }
               { !actionState.workIndicator &&
                 <>
-                  <span><i className="fas fa-circle" aria-hidden="true"></i></span>
+                  <FontAwesomeIcon icon="circle" />
                   <span className="sr-only">Idle</span>
                 </>
               }
             </Button>
             { configState.config && configState.config.showCreateButton && <Button style={{marginLeft: "5px"}}  variant="outline-primary" onClick={newRecord}>Create New</Button> }
             <Button variant="outline-primary" style={{marginLeft: "5px"}} onClick={refreshBoard}>
-              <span><i className="fa fa-sync" aria-hidden="true"></i></span>
+              <FontAwesomeIcon icon="sync" />
             </Button>
           </Nav>
         </Navbar.Collapse>
       </Navbar>
       <DndContainer>
         { displayState === "advanced" &&
-          <div id="advancedContainer" style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "inherit", marginBottom: "5px" }}>
-            <AutoSizer>
-              {
-                ({ height, width }) =>
-                <List
-                  ref={advancedList}
-                  height={height}
-                  rowCount={advancedData.length}
-                  width={width}
-                  rowRenderer={rowRenderer}
-                  rowHeight={measurerState.measurementCaches["advanced"].rowHeight}
-                  deferredMeasurementCache={measurerState.measurementCaches["advanced"]}
-                  subscriptions={appState.subscriptions}
-                  notifications={appState.notifications}
-                >
-                </List>
-              }
-            </AutoSizer>
+          <div id="advancedContainer" style={{ display: "flex", flexDirection: "column", overflow: "auto" }}>
+            { advancedData }
           </div>
         }
-        { displayState === "simple" &&
-          <div id="flexContainer" style={{ display: "flex", flexDirection: "row", overflowX: "auto", overflowY: "hidden", flex: "1", marginBottom: "5px" }}>
+        { <div id="flexContainer" style={{ display: "flex", flexDirection: "row", overflow: "auto", flex: "1" }}>
             { simpleData }
           </div>
         }

@@ -10,9 +10,6 @@ import { Option } from "../domain/Metadata";
 import { Notification } from "../domain/Notification";
 import { BoardViewConfig, BoardEntity } from "../domain/BoardViewConfig";
 import { Subscription } from "../domain/Subscription";
-import { List, CellMeasurerCache, CellMeasurer } from "react-virtualized";
-import AutoSizer from "react-virtualized-auto-sizer";
-import { useMeasurerState } from "../domain/MeasurerState";
 
 interface LaneProps {
     config: BoardEntity;
@@ -49,16 +46,10 @@ const LaneRender = (props: LaneProps) => {
       }
     });
 
-    const listRef = React.useRef<List>(undefined);
-    const measurerState = useMeasurerState();
     const borderColor = props.lane.option.Color ?? "#3b79b7";
 
-    React.useEffect(() => void listRef && listRef.current && listRef.current.recomputeRowHeights(), [ measurerState.measurementCaches[props.lane.option.Value.toString()] ]);
-
     const isActive = canDrop && isOver;
-    let style: React.CSSProperties = {
-      height: "100%"
-    };
+    let style: React.CSSProperties = { };
 
     if (isActive) {
       style = { borderWidth: "3px", borderStyle: "dashed", borderColor: "#02f01c" };
@@ -75,59 +66,23 @@ const LaneRender = (props: LaneProps) => {
       cardForm={props.cardForm}
       key={`tile_${d[props.metadata.PrimaryIdAttribute]}`}
       refresh={props.refresh}
-      subscriptions={props.subscriptions[d[props.metadata.PrimaryIdAttribute]]}
+      subscriptions={props.subscriptions[d[props.metadata.PrimaryIdAttribute]] ?? []}
       searchText={props.searchText}
       data={d}
       config={props.config}
       separatorMetadata={props.separatorMetadata} />
     );
 
-    const rowRenderer = ({key, index, parent, isScrolling, isVisible, style}: {
-      key: string;
-      index: number;
-      parent: any;
-      isScrolling: boolean;
-      isVisible: boolean;
-      style: React.CSSProperties
-    }) => (
-      <CellMeasurer
-          cache={measurerState.measurementCaches[`${props.isSecondaryLane ? "secondary" : "primary"}-${props.lane.option.Value.toString()}`]}
-          columnIndex={0}
-          key={key}
-          parent={parent}
-          rowIndex={index}
-      >
-        <div style={style}>
-          { mapDataToTile(props.lane.data[index]) }
-        </div>
-      </CellMeasurer>
-    );
-
     return (
         <div ref={drop} style={{ ...style, minWidth: props.minWidth ?? "400px", margin: "5px", flex: "1" }}>
-            <Card style={{borderColor: "#d8d8d8", height: props.isSecondaryLane ? "600px" : "100%", borderTopColor: borderColor, borderTopWidth: "3px", color: "#333333"}}>
+            <Card style={{borderColor: "#d8d8d8", height: "100%", borderTopColor: borderColor, borderTopWidth: "3px", color: "#333333"}}>
                 <Card.Header>
                   <Card.Title style={{color: "#045999"}}>{props.lane.option.Label.UserLocalizedLabel.Label}</Card.Title>
                 </Card.Header>
-                <Card.Body>
+                <Card.Body style={{overflow: "auto"}}>
                     {
                       props.cardForm &&
-                      <AutoSizer>
-                        {
-                          ({ height, width }) =>
-                            <List
-                              ref={listRef}
-                              className="List"
-                              height={height}
-                              rowCount={props.lane.data.length}
-                              width={width}
-                              rowRenderer={rowRenderer}
-                              rowHeight={measurerState.measurementCaches[`${props.isSecondaryLane ? "secondary" : "primary"}-${props.lane.option.Value.toString()}`].rowHeight}
-                              deferredMeasurementCache={measurerState.measurementCaches[`${props.isSecondaryLane ? "secondary" : "primary"}-${props.lane.option.Value.toString()}`]}
-                            >
-                            </List>
-                        }
-                      </AutoSizer>
+                      props.lane.data.map(mapDataToTile)
                     }
                 </Card.Body>
             </Card>
@@ -135,4 +90,34 @@ const LaneRender = (props: LaneProps) => {
     );
 };
 
-export const Lane = React.memo(LaneRender);
+export const Lane = React.memo(LaneRender, (a, b) => {
+  if (a.cardForm != b.cardForm) {
+      return false;
+  }
+
+  if (a.dndType != b.dndType) {
+      return false;
+  }
+
+  if (a.metadata != b.metadata) {
+      return false;
+  }
+
+  if (a.searchText != b.searchText) {
+      return false;
+  }
+
+  if (a.notifications != b.notifications) {
+      return false;
+  }
+
+  if (a.subscriptions != b.subscriptions) {
+      return false;
+  }
+
+  if (a.lane.data.length != b.lane.data.length) {
+      return false;
+  }
+
+  return true;
+});
