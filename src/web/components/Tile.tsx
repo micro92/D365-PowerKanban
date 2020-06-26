@@ -298,6 +298,21 @@ const TileRender = (props: TileProps) => {
     );
 };
 
+const isDataEqual = (a: any, b: any) => {
+    if (Object.keys(a).length != Object.keys(b).length) {
+        return false;
+    }
+
+    if (Object.keys(a).some(k => {
+        const value = a[k];
+        return b[k] !== value;
+    })) {
+        return false;
+    }
+
+    return true;
+}
+
 export const Tile = React.memo(TileRender, (a, b) => {
     if (a.borderColor != b.borderColor) {
         return false;
@@ -331,24 +346,30 @@ export const Tile = React.memo(TileRender, (a, b) => {
         return false;
     }
 
-    if ((a.secondaryData || []).length != (b.secondaryData || []).length) {
-        return false;
-    }
-
     if ((a.subscriptions || []).length != (b.subscriptions || []).length) {
         return false;
     }
 
-    if (Object.keys(a.data).length != Object.keys(b.data).length) {
+    const secondaryNotificationsA = Object.keys(a.secondaryNotifications || {}).reduce((all, cur) => [...all, ...a.secondaryNotifications[cur]], []);
+    const secondaryNotificationsB = Object.keys(b.secondaryNotifications || {}).reduce((all, cur) => [...all, ...b.secondaryNotifications[cur]], []);
+
+    if (secondaryNotificationsA.length != secondaryNotificationsB.length) {
         return false;
     }
 
-    if (Object.keys(a.data).some(k => {
-        const value = a.data[k];
-        return b.data[k] !== value;
-    })) {
+    const secondarySubscriptionsA = Object.keys(a.secondarySubscriptions || {}).reduce((all, cur) => [...all, ...a.secondarySubscriptions[cur]], []);
+    const secondarySubscriptionsB = Object.keys(b.secondarySubscriptions || {}).reduce((all, cur) => [...all, ...b.secondarySubscriptions[cur]], []);
+
+    if (secondarySubscriptionsA.length != secondarySubscriptionsB.length) {
         return false;
     }
 
-    return true;
+    const secondaryDataA = a.secondaryData || [];
+    const secondaryDataB = b.secondaryData || [];
+
+    if (secondaryDataA.length != secondaryDataB.length || secondaryDataA.some((a, i) => a.data.length != secondaryDataB[i].data.length || a.data.some((d, j) => !isDataEqual(d, secondaryDataB[i].data[j])))) {
+        return false;
+    }
+
+    return isDataEqual(a.data, b.data);
 });

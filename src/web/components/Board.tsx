@@ -223,6 +223,7 @@ export const Board = () => {
   };
 
   React.useEffect(() => {
+    setDisplayState("simple");
     initializeConfig();
   }, [ configState.configId ]);
 
@@ -316,7 +317,7 @@ export const Board = () => {
 
   // Passing of a new object on each render (which we are doing) will cause all advanced data tiles to rerender, since objects are only compared shallowly
   // Not doing this will make the rerender logic very complex, so we don't do that for now
-  const advancedTileStyle = { margin: "5px" };
+  const advancedTileStyle = React.useMemo(() => ({ margin: "5px" }), []);
 
   const advancedData = React.useMemo(() => {
     return displayState === "advanced" && appState.boardData &&
@@ -326,6 +327,14 @@ export const Board = () => {
     .map(d => {
       const secondaryData = appState.secondaryData.map(s => ({ ...s, data: s.data.filter(sd => sd[`_${configState.config.secondaryEntity.parentLookup}_value`] === d[configState.metadata.PrimaryIdAttribute])}));
       
+      const secondarySubscriptions = Object.keys(appState.subscriptions)
+      .filter(k => secondaryData.some(d => d.data.some(r => r[configState.secondaryMetadata[configState.config.secondaryEntity.logicalName].PrimaryIdAttribute] === k)))
+      .reduce((all, cur) => ({ ...all, [cur]: appState.subscriptions[cur]}) , {});
+
+      const secondaryNotifications = Object.keys(appState.notifications)
+        .filter(k => secondaryData.some(d => d.data.some(r => r[configState.secondaryMetadata[configState.config.secondaryEntity.logicalName].PrimaryIdAttribute] === k)))
+        .reduce((all, cur) => ({ ...all, [cur]: appState.notifications[cur]}) , {});
+
       return (<Tile
         notifications={!appState.notifications ? [] : appState.notifications[d[configState.metadata.PrimaryIdAttribute]] ?? []}
         borderColor={curr.option.Color ?? "#3b79b7"}
@@ -338,8 +347,8 @@ export const Board = () => {
         searchText={appliedSearchText}
         subscriptions={!appState.subscriptions ? [] : appState.subscriptions[d[configState.metadata.PrimaryIdAttribute]] ?? []}
         selectedSecondaryForm={actionState.selectedSecondaryForm}
-        secondaryNotifications={appState.notifications}
-        secondarySubscriptions={appState.subscriptions}
+        secondarySubscriptions={secondarySubscriptions}
+        secondaryNotifications={secondaryNotifications}
         config={configState.config.primaryEntity}
         separatorMetadata={configState.separatorMetadata}
         preventDrag={true}
@@ -363,7 +372,7 @@ export const Board = () => {
       config={configState.config.primaryEntity}
       separatorMetadata={configState.separatorMetadata}
       lane={{...d, data: d.data.filter(r => displayState === "simple" || appState.secondaryData && appState.secondaryData.every(t => t.data.every(tt => tt[`_${configState.config.secondaryEntity.parentLookup}_value`] !== r[configState.metadata.PrimaryIdAttribute])))}} />);
-  }, [appState.boardData, appState.subscriptions, stateFilters, appState.secondaryData, appliedSearchText, appState.notifications, configState.configId]);
+  }, [displayState, appState.boardData, appState.subscriptions, stateFilters, appState.secondaryData, appliedSearchText, appState.notifications, configState.configId]);
 
   return (
     <div style={{height: "100%", display: "flex", flexDirection: "column" }}>
@@ -380,10 +389,12 @@ export const Board = () => {
             <DropdownButton variant="outline-primary" id="formSelector" title={actionState.selectedForm?.name ?? "Select form"} style={{marginLeft: "5px"}}>
               { cardForms?.map(f => <Dropdown.Item onClick={setForm} as="button" id={f.formid} key={f.formid}>{f.name}</Dropdown.Item>) }
             </DropdownButton>
-            <DropdownButton variant="outline-primary" id="displaySelector" title={displayState === "simple" ? "Simple" : "Advanced"} style={{marginLeft: "5px"}}>
-              <Dropdown.Item onClick={setSimpleDisplay} as="button" id="display_simple">Simple</Dropdown.Item>
-              <Dropdown.Item onClick={setSecondaryDisplay} as="button" id="display_secondarys">Advanced</Dropdown.Item>
-            </DropdownButton>
+            { configState.config && configState.config.secondaryEntity &&
+              <DropdownButton variant="outline-primary" id="displaySelector" title={displayState === "simple" ? "Simple" : "Advanced"} style={{marginLeft: "5px"}}>
+                <Dropdown.Item onClick={setSimpleDisplay} as="button" id="display_simple">Simple</Dropdown.Item>
+                <Dropdown.Item onClick={setSecondaryDisplay} as="button" id="display_secondarys">Advanced</Dropdown.Item>
+              </DropdownButton>
+            }
             { displayState === "advanced" &&
               <>
                 <DropdownButton variant="outline-primary" id="secondaryViewSelector" title={actionState.selectedSecondaryView?.name ?? "Select view"} style={{marginLeft: "5px"}}>
@@ -441,7 +452,8 @@ export const Board = () => {
             { advancedData }
           </div>
         }
-        { <div id="flexContainer" style={{ display: "flex", flexDirection: "row", overflow: "auto", flex: "1" }}>
+        { displayState === "simple" && 
+          <div id="flexContainer" style={{ display: "flex", flexDirection: "row", overflow: "auto", flex: "1" }}>
             { simpleData }
           </div>
         }
