@@ -6,12 +6,14 @@ import { NotificationList } from "./NotificationList";
 import { UserInputModal } from "./UserInputModalProps";
 import { ExternalForm } from "./ExternalForm";
 import { useActionState, DisplayType } from "../domain/ActionState";
+import { useConfigState } from "../domain/ConfigState";
 import { ConfigSelector } from "./ConfigSelector";
 
 interface SplitViewProps { }
 
 export const SplitView = (props: SplitViewProps) => {
     const actionState = useActionState();
+    const configState = useConfigState();
 
     return (<>
         <Modal onHide={() => {}} show={!!actionState.progressText} size="lg">
@@ -28,10 +30,10 @@ export const SplitView = (props: SplitViewProps) => {
             </Modal.Body>
         </Modal>
         { actionState.flyOutForm && <ExternalForm /> }
-        { actionState.configSelectorDisplayState && <ConfigSelector /> }
+        { (actionState.configSelectorDisplayState || !configState.configId) && <ConfigSelector /> }
         <div style={{ display: "flex", width: "100%", height: "100%", backgroundColor: "#efefef" }}>
             <div style={actionState.selectedRecord ? { minWidth: "600px", resize: "horizontal", overflow: "auto"} : { width: "100%" }}>
-                <Board />
+                { configState.configId && <Board /> }
             </div>
             { !!actionState.selectedRecord && actionState.selectedRecordDisplayType === DisplayType.recordForm &&
                 <div style={{minWidth: "400px", borderLeft: "1px solid", flex: "1" }}>

@@ -18,6 +18,7 @@ export type ConfigDispatch = (action: Action) => void;
 export type ConfigStateProps = {
     appId?: string;
     configId?: string;
+    primaryEntityLogicalName?: string;
     config?: BoardViewConfig;
     metadata?: Metadata;
     secondaryMetadata?: {[key: string]: Metadata};

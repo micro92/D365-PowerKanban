@@ -5,7 +5,7 @@ import { Button, Form } from "react-bootstrap";
 import { fetchData, refresh } from "../domain/fetchData";
 import { UserInputModal } from "./UserInputModalProps";
 import { useActionContext } from "../domain/ActionState";
-import { useConfigDispatch } from "../domain/ConfigState";
+import { useConfigContext } from "../domain/ConfigState";
 import * as WebApiClient from "xrm-webapi-client";
 import { formatGuid } from "../domain/GuidFormatter";
 
@@ -14,7 +14,7 @@ interface ConfigSelectorProps {
 
 export const ConfigSelector = (props: ConfigSelectorProps) => {
     const [ actionState, actionDispatch ] = useActionContext();
-    const configDispatch = useConfigDispatch();
+    const [ configState, configDispatch ] = useConfigContext();
     const [ configId, setConfigId ] = React.useState(undefined);
     const [ configs, setConfigs ] = React.useState([]);
     const [ makeDefault, setMakeDefault ] = React.useState(false);
@@ -36,7 +36,7 @@ export const ConfigSelector = (props: ConfigSelectorProps) => {
 
     React.useEffect(() => {
         const fetchConfigs = async() => {
-            const { value: data }: { value: Array<any> } = await WebApiClient.Retrieve({overriddenSetName: "webresourceset", queryParams: "?$select=name,displayname,webresourceid&$filter=contains(name, 'd365powerkanban.config.json')&$orderby=displayname" });
+            const { value: data }: { value: Array<any> } = await WebApiClient.Retrieve({entityName: "oss_powerkanbanconfig", queryParams: `?$select=oss_uniquename,oss_value,oss_powerkanbanconfigid&$filter=oss_entitylogicalname eq '${configState.primaryEntityLogicalName}'&$orderby=oss_uniquename` });
             setConfigs(data);
         };
 
@@ -58,7 +58,7 @@ export const ConfigSelector = (props: ConfigSelectorProps) => {
                 <Form.Label>Select a board to load</Form.Label>
                 <Form.Control as="select" onChange={onSelection}>
                     <option value=""></option>
-                    { configs.map(c => <option key={c.webresourceid} value={c.webresourceid}>{c.displayname}</option>) }
+                    { configs.map(c => <option key={c.oss_powerkanbanconfigid} value={c.oss_powerkanbanconfigid}>{c.oss_uniquename}</option>) }
                 </Form.Control>
             </Form.Group>
             <Form.Group controlId="setDefaultCheckbox">

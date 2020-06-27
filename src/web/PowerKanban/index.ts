@@ -3,7 +3,7 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { App } from "../components/App";
 import { ParseSearch } from "../domain/ParseSearch";
-
+import * as WebApiClient from "xrm-webapi-client";
 import { library } from "@fortawesome/fontawesome-svg-core"
 import { faTh, faBell, faBellSlash, faEye, faEyeSlash, faWindowClose, faWindowMaximize, faPlus, faPlusSquare, faAngleDoubleRight, faCircle, faSync, faSearch } from "@fortawesome/free-solid-svg-icons"
  
@@ -44,12 +44,15 @@ export class PowerKanban implements ComponentFramework.StandardControl<IInputs, 
 	 * Called when any value in the property bag has changed. This includes field values, data-sets, global values such as container height and width, offline status, control metadata values such as label, visible, etc.
 	 * @param context The entire property bag available to control via Context Object; It contains values as set up by the customizer mapped to names defined in the manifest, as well as utility functions
 	 */
-	public updateView(context: ComponentFramework.Context<IInputs>): void
+	public async updateView(context: ComponentFramework.Context<IInputs>): Promise<void>
 	{
 		const search = ParseSearch();
+		const configName = this._context.parameters.configName.raw;
+
+		const configId = !configName ? null : await WebApiClient.Retrieve({ entityName: "oss_powerkanbanconfig", alternateKey:  [ { property: "oss_uniquename", value: configName } ] });
 
 		ReactDOM.render(
-			React.createElement(App, { appId: search["appid"] ?? search["app"] ?? "d365default", configId: this._context.parameters.configId.raw, retrievePrimaryData: (columns: Array<string>) => Promise.resolve([]) }),
+			React.createElement(App, { appId: search["appid"] ?? search["app"] ?? "d365default", primaryEntityLogicalName: this._context.parameters.primaryDataSet.getTargetEntityType(), configId: configId, retrievePrimaryData: (columns: Array<string>) => Promise.resolve([]) }),
 			this._container
 		);
 	}

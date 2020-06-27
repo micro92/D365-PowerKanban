@@ -52,9 +52,9 @@ const fetchMetadata = async (entity: string) => {
 };
 
 const fetchConfig = async (configId: string): Promise<BoardViewConfig> => {
-  const config = await WebApiClient.Retrieve({overriddenSetName: "webresourceset", entityId: configId, queryParams: "?$select=content" });
+  const config = await WebApiClient.Retrieve({overriddenSetName: "oss_powerkanbanconfig", entityId: configId, queryParams: "?$select=oss_value" });
 
-  return JSON.parse(atob(config.content));
+  return JSON.parse(atob(config.oss_value));
 };
 
 type DisplayState = "simple" | "advanced";
@@ -315,8 +315,6 @@ export const Board = () => {
     actionDispatch({ type: "setConfigSelectorDisplayState", payload: true });
   };
 
-  // Passing of a new object on each render (which we are doing) will cause all advanced data tiles to rerender, since objects are only compared shallowly
-  // Not doing this will make the rerender logic very complex, so we don't do that for now
   const advancedTileStyle = React.useMemo(() => ({ margin: "5px" }), []);
 
   const advancedData = React.useMemo(() => {

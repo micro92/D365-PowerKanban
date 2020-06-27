@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest>
-  <control namespace="oss" constructor="PowerKanban" version="0.9.31" display-name-key="PowerKanban" description-key="Advanced Kanban for D365 datasets" control-type="standard">
+  <control namespace="oss" constructor="PowerKanban" version="0.9.36" display-name-key="PowerKanban" description-key="Advanced Kanban for D365 datasets" control-type="standard">
     <!-- dataset node represents a set of entity records on CDS; allow more than one datasets -->
     <data-set name="primaryDataSet" display-name-key="Primary Data Set" cds-data-set-options="displayCommandBar:false;displayViewSelector:false;displayQuickFind:false">
     </data-set>
-    <property name="configId" display-name-key="configId" description-key="ID of the JSON webresource that contains the config" of-type="SingleLine.Text" usage="input" required="true" />
+    <property name="configName" display-name-key="configName" description-key="Unique name of the powerkanban config to use by default. Opens the config selector on load if not passed" of-type="SingleLine.Text" usage="input" required="false" />
     <resources>
       <code path="index.ts" order="1"/>
       <css path="../css/bootstrap.min.css" order="1" />
