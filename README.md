@@ -34,5 +34,31 @@ Todos:
 
 # Installation
 - Download and install the managed solution from this repository inside the solutions folder
-- Go into the solution and open the default config. Check the url of the window for the id parameter and copy the guid (This is not user friendly and will soon change)
-- Enable the PCF control for the entity you like and pass the copied guid as configId parameter
+- Create at least one "PowerKanban Config" record for each entity where you want to use PowerKanban. Give it a unique name and enter a configuration json such as the following into the value field:
+```json
+{
+    "primaryEntity": {
+        "allowTransitions": true,
+        "logicalName": "incident",
+        "swimLaneSource": "statuscode",
+        "notificationLookup": "oss_incidentid",
+        "subscriptionLookup": "oss_incidentid",
+        "transitionCallback": "boardViewExtender.onStateTransition"
+    },
+    "defaultViewId": "",
+    "showCreateButton": true,
+    "showDeleteButton": true,
+    "showDeactivateButton": true,
+    "secondaryEntity": {
+        "allowTransitions": true,
+        "logicalName": "task",
+        "notificationLookup": "oss_taskid",
+        "parentLookup": "regardingobjectid",
+        "subscriptionLookup": "oss_taskid",
+        "swimLaneSource": "statuscode"
+    },
+    "customScriptUrl": "/WebResources/oss_/D365BoardView/js/exampleExternalScript.js"
+}
+```
+The notificationLookup and subscriptionLookup properties on primaryEntity and secondaryEntity can be omitted if you don't want to use the subscription / notification features.
+- Enable the PCF control for the entity you like and pass the unique name of the PowerKanban config you created as 'configName' property inside the PCF control if you want to use this config on start automatically. If you don't pass one, the kanban board will load with the config selector by default.
