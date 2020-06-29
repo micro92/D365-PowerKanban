@@ -33,7 +33,7 @@ Todos:
 ![Screenshot_2020-06-23 Accounts My Active Accounts - Microsoft Dynamics 365(2)](https://user-images.githubusercontent.com/4287938/85367151-fdd2ee80-b528-11ea-9765-bd3a80337fcb.png)
 
 # Installation
-- Download and install the managed solution from this repository inside the solutions folder
+- Download and install the [latest managed solution](/releases/latest)
 - Create at least one "PowerKanban Config" record for each entity where you want to use PowerKanban. Give it a unique name and enter a configuration json such as the following into the value field:
 ```json
 {
