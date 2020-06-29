@@ -52,9 +52,9 @@ const fetchMetadata = async (entity: string) => {
 };
 
 const fetchConfig = async (configId: string): Promise<BoardViewConfig> => {
-  const config = await WebApiClient.Retrieve({overriddenSetName: "oss_powerkanbanconfig", entityId: configId, queryParams: "?$select=oss_value" });
+  const config = await WebApiClient.Retrieve({entityName: "oss_powerkanbanconfig", entityId: configId, queryParams: "?$select=oss_value" });
 
-  return JSON.parse(atob(config.oss_value));
+  return JSON.parse(config.oss_value);
 };
 
 type DisplayState = "simple" | "advanced";

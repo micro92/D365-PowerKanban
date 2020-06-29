@@ -10,6 +10,7 @@ import * as WebApiClient from "xrm-webapi-client";
 import { formatGuid } from "../domain/GuidFormatter";
 
 interface ConfigSelectorProps {
+    show: boolean;
 }
 
 export const ConfigSelector = (props: ConfigSelectorProps) => {
@@ -53,7 +54,7 @@ export const ConfigSelector = (props: ConfigSelectorProps) => {
     };
 
     return (
-        <UserInputModal okButtonDisabled={!configId} noCallBack={() => {}} yesCallBack={yesCallBack} finally={hideDialog} title={"Choose Board"} show={actionState.configSelectorDisplayState}>
+        <UserInputModal okButtonDisabled={!configId} noCallBack={() => {}} yesCallBack={yesCallBack} finally={hideDialog} title={"Choose Board"} show={props.show}>
             <Form.Group controlId="configSelector">
                 <Form.Label>Select a board to load</Form.Label>
                 <Form.Control as="select" onChange={onSelection}>

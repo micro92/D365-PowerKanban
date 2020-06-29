@@ -49,10 +49,15 @@ export class PowerKanban implements ComponentFramework.StandardControl<IInputs, 
 		const search = ParseSearch();
 		const configName = this._context.parameters.configName.raw;
 
-		const configId = !configName ? null : await WebApiClient.Retrieve({ entityName: "oss_powerkanbanconfig", alternateKey:  [ { property: "oss_uniquename", value: configName } ] });
+		const config = !configName ? null : await WebApiClient.Retrieve({ entityName: "oss_powerkanbanconfig", alternateKey:  [ { property: "oss_uniquename", value: configName } ], queryParams: "?$select=oss_powerkanbanconfigid" });
 
 		ReactDOM.render(
-			React.createElement(App, { appId: search["appid"] ?? search["app"] ?? "d365default", primaryEntityLogicalName: this._context.parameters.primaryDataSet.getTargetEntityType(), configId: configId, retrievePrimaryData: (columns: Array<string>) => Promise.resolve([]) }),
+			React.createElement(App, {
+				appId: search["appid"] ?? search["app"] ?? "d365default",
+				primaryEntityLogicalName: this._context.parameters.primaryDataSet.getTargetEntityType(),
+				configId: config ? config.oss_powerkanbanconfigid : null,
+				retrievePrimaryData: (columns: Array<string>) => Promise.resolve([]) 
+			}),
 			this._container
 		);
 	}

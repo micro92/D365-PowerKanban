@@ -30,7 +30,7 @@ export const SplitView = (props: SplitViewProps) => {
             </Modal.Body>
         </Modal>
         { actionState.flyOutForm && <ExternalForm /> }
-        { (actionState.configSelectorDisplayState || !configState.configId) && <ConfigSelector /> }
+        <ConfigSelector show={actionState.configSelectorDisplayState || !configState.configId} />
         <div style={{ display: "flex", width: "100%", height: "100%", backgroundColor: "#efefef" }}>
             <div style={actionState.selectedRecord ? { minWidth: "600px", resize: "horizontal", overflow: "auto"} : { width: "100%" }}>
                 { configState.configId && <Board /> }
