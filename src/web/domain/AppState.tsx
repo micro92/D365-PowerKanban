@@ -2,6 +2,7 @@ import * as React from "react";
 import { BoardLane } from "./BoardLane";
 import { Subscription } from "./Subscription";
 import { Notification } from "./Notification";
+import { AppProps } from "../components/App";
 
 type Action = { type: "setBoardData", payload: Array<BoardLane> }
     | { type: "setSecondaryData", payload: Array<any> }
@@ -15,6 +16,7 @@ export type AppStateProps = {
     secondaryData?: Array<BoardLane>;
     subscriptions?: {[key: string]: Array<Subscription>};
     notifications?: {[key: string]: Array<Notification>};
+    retrievePrimaryData?: (columns: Array<string>) => Promise<any>;
 };
 
 type AppContextProps = {
@@ -41,13 +43,13 @@ function stateReducer(state: AppStateProps, action: Action): AppStateProps {
 const AppState = React.createContext<AppStateProps | undefined>(undefined);
 const AppDispatch = React.createContext<AppStateDispatch | undefined>(undefined);
 
-export function AppStateProvider({ children }: AppContextProps) {
-    const [state, dispatch] = React.useReducer(stateReducer, { });
+export const AppStateProvider: React.FC<AppProps> = (props) => {
+    const [state, dispatch] = React.useReducer(stateReducer, props ?? {});
 
     return (
         <AppState.Provider value={state}>
             <AppDispatch.Provider value={dispatch}>
-                {children}
+                {props.children}
             </AppDispatch.Provider>
         </AppState.Provider>
     );

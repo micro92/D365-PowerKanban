@@ -14,6 +14,7 @@ export class PowerKanban implements ComponentFramework.StandardControl<IInputs, 
 	private _container: HTMLDivElement;
 	private _context: ComponentFramework.Context<IInputs>;
 	private _notifyOutputChanged: () => void;
+	private _isInitialized = false;
 
 	/**
 	 * Empty constructor.
@@ -39,6 +40,62 @@ export class PowerKanban implements ComponentFramework.StandardControl<IInputs, 
 		library.add(faTh, faBell, faBellSlash, faEye, faEyeSlash, faWindowClose, faWindowMaximize, faPlus, faPlusSquare, faAngleDoubleRight, faCircle, faSync, faSearch);
 	}
 
+	private addMissingColumns(columns: Array<string>) {
+		columns.forEach(c => {
+			if (!this._context.parameters.primaryDataSet.columns.find(f => f.name === c)) {
+				this._context.parameters.primaryDataSet.addColumn(c);
+			}
+		});
+	}
+
+	private normalizeRecord(record: any) {
+		return Object.keys(record)
+			.reduce((all, cur) => {
+				// Handle lookups
+				if (record[cur].reference != null) {
+					all[`_${cur}_value`] = record[cur].reference.id;
+					all[`_${cur}_value@OData.Community.Display.V1.FormattedValue`] = record[cur].reference.name;
+					all[`_${cur}_value@Microsoft.Dynamics.CRM.lookuplogicalname`] = record[cur].reference.etn;
+				}
+				// Handle optionsets
+				else if(record[cur].valueString != null) {
+					all[cur] = parseInt(record[cur].valueString);
+					all[`${cur}@OData.Community.Display.V1.FormattedValue`] = record[cur].label;
+				}
+				// Handle formatted data other than option sets
+				else if (record[cur].formatted != null) {
+					all[`${cur}@OData.Community.Display.V1.FormattedValue`] = record[cur].formatted;
+				}
+				// Handle all others
+				else if (record[cur].value != null) {
+					all[cur] = record[cur].value;
+				}
+			}, {} as any);
+	}
+
+	private async retrievePrimaryData(columns: Array<string>): Promise<Array<any>>
+	{
+		return new Promise((resolve, reject) => {
+			if (!this._context.parameters.primaryDataSet.paging || this._context.parameters.primaryDataSet.loading) {
+				reject(new Error("Data set is not ready"));
+			}
+
+			this.addMissingColumns(columns);
+
+			this._context.parameters.primaryDataSet.paging.setPageSize(5000);
+			this._context.parameters.primaryDataSet.paging.reset();
+
+			while (this._context.parameters.primaryDataSet.paging.hasNextPage) {
+				this._context.parameters.primaryDataSet.paging.loadNextPage();
+			}
+
+			const data = Object.keys(this._context.parameters.primaryDataSet.records)
+				.map(k => (this._context.parameters.primaryDataSet.records[k] as any)._record.fields)
+				.map(r => this.normalizeRecord(r));
+
+			resolve(data);
+		});
+	}
 
 	/**
 	 * Called when any value in the property bag has changed. This includes field values, data-sets, global values such as container height and width, offline status, control metadata values such as label, visible, etc.
@@ -46,6 +103,10 @@ export class PowerKanban implements ComponentFramework.StandardControl<IInputs, 
 	 */
 	public async updateView(context: ComponentFramework.Context<IInputs>): Promise<void>
 	{
+		if (this._isInitialized) {
+			return;
+		}
+
 		const search = ParseSearch();
 		const configName = this._context.parameters.configName.raw;
 
@@ -56,10 +117,12 @@ export class PowerKanban implements ComponentFramework.StandardControl<IInputs, 
 				appId: search["appid"] ?? search["app"] ?? "d365default",
 				primaryEntityLogicalName: this._context.parameters.primaryDataSet.getTargetEntityType(),
 				configId: config ? config.oss_powerkanbanconfigid : null,
-				retrievePrimaryData: (columns: Array<string>) => Promise.resolve([]) 
+				retrievePrimaryData: this.retrievePrimaryData 
 			}),
 			this._container
 		);
+
+		this._isInitialized = true;
 	}
 
 	/** 
