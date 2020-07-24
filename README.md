@@ -13,11 +13,11 @@ Features so far:
 - Search in data, highlighting and filtering
 - Support for subscriptions and notifications to records, so that you can subscribe to record changes and see them
 - Custom Dialogs, for allowing to also resolve cases, win opportunities etc from the board
+- Works on entity lists as well as on form subgrids
 
 Todos:
 - Virtualization and Performance Tweaking
 - Plugins for automatically creating notifications for subscribed users are already done, need to change namespace
-- Pay respect to dataset data, we are only using views currently, so the entitylist views work right now, but subgrids need tweaking
 
 # Impressions
 ## Simple View (Primary Entity only)
@@ -25,6 +25,9 @@ Todos:
 
 ## Advanced View (Primary Entity and Secondary Entity)
 ![Screenshot_2020-06-23 Accounts My Active Accounts - Microsoft Dynamics 365](https://user-images.githubusercontent.com/4287938/85366990-adf42780-b528-11ea-8848-bc035b21ae4f.png)
+
+## Form View
+![grafik](https://user-images.githubusercontent.com/4287938/88367426-fef77580-cd8b-11ea-9658-e1af8af17d1e.png)
 
 ## Custom Dialogs
 ![Screenshot_2020-06-23 Accounts My Active Accounts - Microsoft Dynamics 365(1)](https://user-images.githubusercontent.com/4287938/85367031-c2382480-b528-11ea-9864-c0b36f0e6e00.png)
