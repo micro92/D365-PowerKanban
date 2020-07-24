@@ -16,7 +16,7 @@ export type AppStateProps = {
     secondaryData?: Array<BoardLane>;
     subscriptions?: {[key: string]: Array<Subscription>};
     notifications?: {[key: string]: Array<Notification>};
-    retrievePrimaryData?: (columns: Array<string>) => Promise<any>;
+    primaryDataIds?: Array<string>;
 };
 
 type AppContextProps = {

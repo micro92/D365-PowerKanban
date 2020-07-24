@@ -44,8 +44,8 @@ const TileRender = (props: TileProps) => {
     const configState = useConfigState();
     const actionDispatch = useActionDispatch();
 
-    const secondaryMetadata = configState.secondaryMetadata[configState.config.secondaryEntity.logicalName];
     const secondaryConfig = configState.config.secondaryEntity;
+    const secondaryMetadata = configState.secondaryMetadata[secondaryConfig ? secondaryConfig.logicalName : ""];
     const secondarySeparator = configState.secondarySeparatorMetadata;
     const stub = React.useRef(undefined);
 
@@ -240,7 +240,7 @@ const TileRender = (props: TileProps) => {
                         <DropdownButton id="displaySelector" variant="outline-secondary" title="" style={{ margintop: "5px" }}>
                             <Dropdown.Item onClick={setSelectedRecord} as="button" id="setSelected"><FontAwesomeIcon icon="angle-double-right" /> Open in split screen</Dropdown.Item>
                             <Dropdown.Item onClick={openInNewTab} as="button" id="setSelected"><FontAwesomeIcon icon="window-maximize" /> Open in new window</Dropdown.Item>
-                            { configState.config.secondaryEntity && <Dropdown.Item onClick={createNewSecondary} as="button" id="addSecondary"><FontAwesomeIcon icon="plus" /> Create new {secondaryMetadata.DisplayName.UserLocalizedLabel.Label}</Dropdown.Item> }
+                            { secondaryConfig && <Dropdown.Item onClick={createNewSecondary} as="button" id="addSecondary"><FontAwesomeIcon icon="plus" /> Create new {secondaryMetadata.DisplayName.UserLocalizedLabel.Label}</Dropdown.Item> }
                             {
                                 props.config.customButtons && props.config.customButtons.length &&
                                 <>

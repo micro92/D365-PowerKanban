@@ -1,7 +1,7 @@
 import {IInputs, IOutputs} from "./generated/ManifestTypes";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { App } from "../components/App";
+import { App, AppProps } from "../components/App";
 import { ParseSearch } from "../domain/ParseSearch";
 import * as WebApiClient from "xrm-webapi-client";
 import { library } from "@fortawesome/fontawesome-svg-core"
@@ -14,13 +14,28 @@ export class PowerKanban implements ComponentFramework.StandardControl<IInputs, 
 	private _container: HTMLDivElement;
 	private _context: ComponentFramework.Context<IInputs>;
 	private _notifyOutputChanged: () => void;
-	private _isInitialized = false;
+
+	private config: any = null;
 
 	/**
 	 * Empty constructor.
 	 */
 	constructor()
 	{
+	}
+
+	private async loadAllPages(columns: Array<string>): Promise<Array<any>>
+	{
+		if (!this._context.parameters.primaryDataSet.paging || this._context.parameters.primaryDataSet.loading) {
+			return;
+		}
+
+		this._context.parameters.primaryDataSet.paging.setPageSize(5000);
+		this._context.parameters.primaryDataSet.paging.reset();
+
+		while (this._context.parameters.primaryDataSet.paging.hasNextPage) {
+			this._context.parameters.primaryDataSet.paging.loadNextPage();
+		}
 	}
 
 	/**
@@ -31,70 +46,15 @@ export class PowerKanban implements ComponentFramework.StandardControl<IInputs, 
 	 * @param state A piece of data that persists in one session for a single user. Can be set at any point in a controls life cycle by calling 'setControlState' in the Mode interface.
 	 * @param container If a control is marked control-type='standard', it will receive an empty div element within which it can render its content.
 	 */
-	public init(context: ComponentFramework.Context<IInputs>, notifyOutputChanged: () => void, state: ComponentFramework.Dictionary, container:HTMLDivElement)
+	public async init(context: ComponentFramework.Context<IInputs>, notifyOutputChanged: () => void, state: ComponentFramework.Dictionary, container:HTMLDivElement)
 	{
 		this._notifyOutputChanged = notifyOutputChanged;
 		this._context = context;
 		this._container = container;
 
 		library.add(faTh, faBell, faBellSlash, faEye, faEyeSlash, faWindowClose, faWindowMaximize, faPlus, faPlusSquare, faAngleDoubleRight, faCircle, faSync, faSearch);
-	}
 
-	private addMissingColumns(columns: Array<string>) {
-		columns.forEach(c => {
-			if (!this._context.parameters.primaryDataSet.columns.find(f => f.name === c)) {
-				this._context.parameters.primaryDataSet.addColumn(c);
-			}
-		});
-	}
-
-	private normalizeRecord(record: any) {
-		return Object.keys(record)
-			.reduce((all, cur) => {
-				// Handle lookups
-				if (record[cur].reference != null) {
-					all[`_${cur}_value`] = record[cur].reference.id;
-					all[`_${cur}_value@OData.Community.Display.V1.FormattedValue`] = record[cur].reference.name;
-					all[`_${cur}_value@Microsoft.Dynamics.CRM.lookuplogicalname`] = record[cur].reference.etn;
-				}
-				// Handle optionsets
-				else if(record[cur].valueString != null) {
-					all[cur] = parseInt(record[cur].valueString);
-					all[`${cur}@OData.Community.Display.V1.FormattedValue`] = record[cur].label;
-				}
-				// Handle formatted data other than option sets
-				else if (record[cur].formatted != null) {
-					all[`${cur}@OData.Community.Display.V1.FormattedValue`] = record[cur].formatted;
-				}
-				// Handle all others
-				else if (record[cur].value != null) {
-					all[cur] = record[cur].value;
-				}
-			}, {} as any);
-	}
-
-	private async retrievePrimaryData(columns: Array<string>): Promise<Array<any>>
-	{
-		return new Promise((resolve, reject) => {
-			if (!this._context.parameters.primaryDataSet.paging || this._context.parameters.primaryDataSet.loading) {
-				reject(new Error("Data set is not ready"));
-			}
-
-			this.addMissingColumns(columns);
-
-			this._context.parameters.primaryDataSet.paging.setPageSize(5000);
-			this._context.parameters.primaryDataSet.paging.reset();
-
-			while (this._context.parameters.primaryDataSet.paging.hasNextPage) {
-				this._context.parameters.primaryDataSet.paging.loadNextPage();
-			}
-
-			const data = Object.keys(this._context.parameters.primaryDataSet.records)
-				.map(k => (this._context.parameters.primaryDataSet.records[k] as any)._record.fields)
-				.map(r => this.normalizeRecord(r));
-
-			resolve(data);
-		});
+		this._context.parameters.primaryDataSet.paging.setPageSize(5000);
 	}
 
 	/**
@@ -103,26 +63,24 @@ export class PowerKanban implements ComponentFramework.StandardControl<IInputs, 
 	 */
 	public async updateView(context: ComponentFramework.Context<IInputs>): Promise<void>
 	{
-		if (this._isInitialized) {
-			return;
+		const search = ParseSearch();
+
+		if (!this.config) {
+			const configName = this._context.parameters.configName.raw;
+			this.config = !configName ? null : await WebApiClient.Retrieve({ entityName: "oss_powerkanbanconfig", alternateKey:  [ { property: "oss_uniquename", value: configName } ], queryParams: "?$select=oss_powerkanbanconfigid" });
 		}
 
-		const search = ParseSearch();
-		const configName = this._context.parameters.configName.raw;
-
-		const config = !configName ? null : await WebApiClient.Retrieve({ entityName: "oss_powerkanbanconfig", alternateKey:  [ { property: "oss_uniquename", value: configName } ], queryParams: "?$select=oss_powerkanbanconfigid" });
+		const props = {
+			appId: search["appid"] ?? search["app"] ?? "d365default",
+			primaryEntityLogicalName: this._context.parameters.primaryDataSet.getTargetEntityType(),
+			configId: this.config ? this.config.oss_powerkanbanconfigid : null,
+			primaryDataIds: (context.mode as any).contextInfo.entityId ? this._context.parameters.primaryDataSet.sortedRecordIds : undefined
+		};
 
 		ReactDOM.render(
-			React.createElement(App, {
-				appId: search["appid"] ?? search["app"] ?? "d365default",
-				primaryEntityLogicalName: this._context.parameters.primaryDataSet.getTargetEntityType(),
-				configId: config ? config.oss_powerkanbanconfigid : null,
-				retrievePrimaryData: this.retrievePrimaryData 
-			}),
+			React.createElement(App, props),
 			this._container
 		);
-
-		this._isInitialized = true;
 	}
 
 	/** 

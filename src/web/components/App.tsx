@@ -9,12 +9,12 @@ export interface AppProps
   configId?: string;
   primaryEntityLogicalName?: string;
   appId?: string;
-  retrievePrimaryData: (columns: Array<string>) => Promise<Array<any>>;
+  primaryDataIds?: Array<string>;
 }
 
 export const App: React.FC<AppProps> = (props) => {
   return (
-    <AppStateProvider retrievePrimaryData={props.retrievePrimaryData}>
+    <AppStateProvider primaryDataIds={props.primaryDataIds}>
       <ActionStateProvider>
         <ConfigStateProvider appId={props.appId} configId={props.configId} primaryEntityLogicalName={props.primaryEntityLogicalName}>
           <SplitView />

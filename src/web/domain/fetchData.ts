@@ -30,120 +30,118 @@ interface FetchDataOptions {
   additionalCondition?: { attribute: string; operator: string; values?: Array<string>; };
 }
 
-const getFields = (form: CardForm, swimLaneSource: string) => {
-  const formFields = Array.from(new Set([...getFieldsFromSegment(form.parsed.header), ...getFieldsFromSegment(form.parsed.body), ...getFieldsFromSegment(form.parsed.footer)]));
-
-  // We make sure that the swim lane source is always included without having to update all views
-  if (formFields.every(f => f !== swimLaneSource)) {
-    formFields.push(swimLaneSource);
-  }
-
-  return formFields;
-}
-
 /**
  * <summary>Prepares fetch XML for data retrieval. For secondary data, value conditions are used. If they overflow a certain amount of value tags, we create multiple fetches for gathering all data</summary>
  */
 const prepareFetch = (fetchXml: string, swimLaneSource: string, form: CardForm, metadata: Metadata, options?: FetchDataOptions, tempFetches: Array<string> = []): Array<string> => {
-  const formFields = getFields(form, swimLaneSource);
+  const formFields = Array.from(new Set([...getFieldsFromSegment(form.parsed.header), ...getFieldsFromSegment(form.parsed.body), ...getFieldsFromSegment(form.parsed.footer)]));
 
-  if (options?.additionalFields) {
-    options.additionalFields.forEach(f => {
-      if (formFields.every(f => f !== swimLaneSource)) {
-        formFields.push(swimLaneSource);
-      }
-    });
-  }
+    // We make sure that the swim lane source is always included without having to update all views
+    if (formFields.every(f => f !== swimLaneSource)) {
+      formFields.push(swimLaneSource);
+    }
 
-  const parser = new DOMParser();
-  const xml = parser.parseFromString(fetchXml, "application/xml");
-  const root = xml.getElementsByTagName("fetch")[0];
-  const entity = root.getElementsByTagName("entity")[0];
-
-  // Set no-lock on fetch
-  root.setAttribute("no-lock", "true");
-
-  // Remove all currently set attributes
-  removeChildren(entity, "attribute");
-
-  Array.from(entity.getElementsByTagName("link-entity")).forEach(l => {
-    removeChildren(l, "attribute");
-  });
-
-  // Add all attributes required for rendering
-  [metadata.PrimaryIdAttribute].concat(formFields).concat(options?.additionalFields ?? [])
-  .map(a => {
-    const e = xml.createElement("attribute");
-    e.setAttribute("name", a);
-
-    return e;
-  })
-  .forEach(e => {
-    entity.append(e);
-  });
-
-  const serializer = new XMLSerializer();
-
-  if (options?.additionalCondition) {
-    const filter = xml.createElement("filter");
-    let didOverflow = false;
-    const c = options?.additionalCondition;
-
-    const condition = xml.createElement("condition");
-    condition.setAttribute("attribute", c.attribute);
-    condition.setAttribute("operator", c.operator);
-
-    if (c.operator.toLowerCase() === "in") {
-      c.values.forEach((v, i) => {
-        if (i > (maxInFilterSize - 1)) {
-          didOverflow = true;
-          return;
+    if (options?.additionalFields) {
+      options.additionalFields.forEach(f => {
+        if (formFields.every(f => f !== swimLaneSource)) {
+          formFields.push(swimLaneSource);
         }
-
-        const value = xml.createElement("value");
-        value.textContent = v;
-
-        condition.append(value);
       });
     }
-    else if (c.values?.length) {
-      condition.setAttribute("value", c.values[0]);
+
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(fetchXml, "application/xml");
+    const root = xml.getElementsByTagName("fetch")[0];
+    const entity = root.getElementsByTagName("entity")[0];
+
+    // Set no-lock on fetch
+    root.setAttribute("no-lock", "true");
+
+    // Remove all currently set attributes
+    removeChildren(entity, "attribute");
+
+    Array.from(entity.getElementsByTagName("link-entity")).forEach(l => {
+      removeChildren(l, "attribute");
+    });
+
+    // Add all attributes required for rendering
+    [metadata.PrimaryIdAttribute].concat(formFields).concat(options?.additionalFields ?? [])
+    .map(a => {
+      const e = xml.createElement("attribute");
+      e.setAttribute("name", a);
+
+      return e;
+    })
+    .forEach(e => {
+      entity.append(e);
+    });
+
+    const serializer = new XMLSerializer();
+
+    if (options?.additionalCondition) {
+      const filter = xml.createElement("filter");
+      let didOverflow = false;
+      const c = options?.additionalCondition;
+
+      const condition = xml.createElement("condition");
+      condition.setAttribute("attribute", c.attribute);
+      condition.setAttribute("operator", c.operator);
+
+      if (c.operator.toLowerCase() === "in") {
+        c.values.forEach((v, i) => {
+          if (i > (maxInFilterSize - 1)) {
+            didOverflow = true;
+            return;
+          }
+
+          const value = xml.createElement("value");
+          value.textContent = v;
+
+          condition.append(value);
+        });
+      }
+      else if (c.values?.length) {
+        condition.setAttribute("value", c.values[0]);
+      }
+
+      filter.append(condition);
+      entity.append(filter);
+
+      if (didOverflow) {
+        return prepareFetch(fetchXml, swimLaneSource, form, metadata, {...options, additionalCondition: { ...c, values: c.values.slice(maxInFilterSize) }}, [...tempFetches, serializer.serializeToString(xml)]);
+      }
     }
 
-    filter.append(condition);
-    entity.append(filter);
+    const fetch = serializer.serializeToString(xml);
 
-    if (didOverflow) {
-      return prepareFetch(fetchXml, swimLaneSource, form, metadata, {...options, additionalCondition: { ...c, values: c.values.slice(maxInFilterSize) }}, [...tempFetches, serializer.serializeToString(xml)]);
-    }
-  }
-
-  const fetch = serializer.serializeToString(xml);
-
-  return [...tempFetches, fetch];
+    return [...tempFetches, fetch];
 };
 
-export const fetchData = async (entityName: string, fetchXml: string, swimLaneSource: string, form: CardForm, metadata: Metadata, attribute: Attribute, retrieveHandler: (columns: Array<string>) => Promise<Array<any>>, options?: FetchDataOptions): Promise<Array<BoardLane>> => {
+export const fetchData = async (entityName: string, fetchXml: string, swimLaneSource: string, form: CardForm, metadata: Metadata, attribute: Attribute, isPrimary: boolean, appState: AppStateProps, options?: FetchDataOptions): Promise<Array<BoardLane>> => {
   try {
     if (!form) {
       return [];
     }
 
+    const fetches = prepareFetch(fetchXml, swimLaneSource, form, metadata, (!isPrimary || appState.primaryDataIds == null)
+      ? options
+      : {
+          ...options, 
+          additionalCondition: {
+            attribute: metadata.PrimaryIdAttribute,
+            operator: "in",
+            values: appState.primaryDataIds.length ? appState.primaryDataIds : ["00000000-0000-0000-0000-000000000000"]
+          }
+        }
+      );
+
     const data: Array<any> = [];
 
-    if (retrieveHandler) {
-      const retrievedData = await retrieveHandler(getFields(form, swimLaneSource));
-      data.push(...retrievedData);
-    }
-    else {
-      const fetches = prepareFetch(fetchXml, swimLaneSource, form, metadata, options);
+    for (let i = 0; i < fetches.length; i++) {
+      const fetch = fetches[i];
+      const { value: tempData }: { value: Array<any> } = await WebApiClient.Retrieve({ entityName: entityName, fetchXml: fetch, returnAllPages: true, headers: [ { key: "Prefer", value: "odata.include-annotations=\"*\"" } ] });
 
-      for (let i = 0; i < fetches.length; i++) {
-        const fetch = fetches[i];
-        const { value: tempData }: { value: Array<any> } = await WebApiClient.Retrieve({ entityName: entityName, fetchXml: fetch, returnAllPages: true, headers: [ { key: "Prefer", value: "odata.include-annotations=\"*\"" } ] });
-
-        data.push(...tempData);
-      }
+      data.push(...tempData);
     }
 
     const lanes = attribute.AttributeType === "Boolean" ? [ attribute.OptionSet.FalseOption, attribute.OptionSet.TrueOption ] : attribute.OptionSet.Options.sort((a, b) => a.State - b.State);
@@ -152,13 +150,13 @@ export const fetchData = async (entityName: string, fetchXml: string, swimLaneSo
       const laneSource = record[swimLaneSource];
 
       if (!laneSource) {
-        const undefinedLane = all.find(l => !l.option);
+        const undefinedLane = all.find(l => l.option.Value === null);
 
         if (undefinedLane) {
           undefinedLane.data.push(record);
         }
         else {
-          all.push({ option: undefined, data: [ record ] });
+          all.push({ option: { Value: null, Color: "#777", Label: { UserLocalizedLabel: "None" } } as any, data: [ record ] });
         }
 
         return all;
@@ -226,7 +224,7 @@ export const fetchSubscriptions = async (config: BoardViewConfig) => {
     returnAllPages: true
   });
 
-  return groupDataByProperty(config.primaryEntity.subscriptionLookup, config.secondaryEntity.subscriptionLookup, data);
+  return groupDataByProperty(config.primaryEntity.subscriptionLookup, config.secondaryEntity ? config.secondaryEntity.subscriptionLookup : "", data);
 };
 
 export const fetchNotifications = async (config: BoardViewConfig): Promise<{[key: string]: Array<Notification>}> => {
@@ -239,7 +237,7 @@ export const fetchNotifications = async (config: BoardViewConfig): Promise<{[key
 
   const notifications: Array<Notification> = data.map((d: Notification) => ({...d, parsed: d.oss_data ? JSON.parse(d.oss_data) : undefined }));
 
-  return groupDataByProperty(config.primaryEntity.notificationLookup, config.secondaryEntity.notificationLookup, notifications);
+  return groupDataByProperty(config.primaryEntity.notificationLookup, config.secondaryEntity ? config.secondaryEntity.notificationLookup : "", notifications);
 };
 
 export const refresh = async (appDispatch: AppStateDispatch, appState: AppStateProps, configState: ConfigStateProps, actionDispatch: ActionDispatch, actionState: ActionStateProps, fetchXml?: string, selectedForm?: CardForm, secondaryFetchXml?: string, secondarySelectedForm?: CardForm) => {
@@ -252,30 +250,34 @@ export const refresh = async (appDispatch: AppStateDispatch, appState: AppStateP
       selectedForm ?? actionState.selectedForm,
       configState.metadata,
       configState.separatorMetadata,
-      appState.retrievePrimaryData
+      true,
+      appState
     );
     appDispatch({ type: "setBoardData", payload: data });
 
-    const secondaryData = await fetchData(configState.config.secondaryEntity.logicalName,
-      secondaryFetchXml ?? actionState.selectedSecondaryView.fetchxml,
-      configState.config.secondaryEntity.swimLaneSource,
-      secondarySelectedForm ?? actionState.selectedSecondaryForm,
-      configState.secondaryMetadata[configState.config.secondaryEntity.logicalName],
-      configState.secondarySeparatorMetadata,
-      null,
-      {
-        additionalFields: [
-          configState.config.secondaryEntity.parentLookup
-        ],
-        additionalCondition: {
-            attribute: configState.config.secondaryEntity.parentLookup,
-            operator: "in",
-            values: data.some(d => d.data.length > 1) ? data.reduce((all, d) => [...all, ...d.data.map(laneData => laneData[configState.metadata.PrimaryIdAttribute] as string)], [] as Array<string>) : ["00000000-0000-0000-0000-000000000000"]
+    if (configState.config.secondaryEntity) {
+      const secondaryData = await fetchData(configState.config.secondaryEntity.logicalName,
+        secondaryFetchXml ?? actionState.selectedSecondaryView.fetchxml,
+        configState.config.secondaryEntity.swimLaneSource,
+        secondarySelectedForm ?? actionState.selectedSecondaryForm,
+        configState.secondaryMetadata[configState.config.secondaryEntity.logicalName],
+        configState.secondarySeparatorMetadata,
+        false,
+        appState,
+        {
+          additionalFields: [
+            configState.config.secondaryEntity.parentLookup
+          ],
+          additionalCondition: {
+              attribute: configState.config.secondaryEntity.parentLookup,
+              operator: "in",
+              values: data.some(d => d.data.length > 1) ? data.reduce((all, d) => [...all, ...d.data.map(laneData => laneData[configState.metadata.PrimaryIdAttribute] as string)], [] as Array<string>) : ["00000000-0000-0000-0000-000000000000"]
+          }
         }
-      }
-    );
+      );
 
-    appDispatch({ type: "setSecondaryData", payload: secondaryData });
+      appDispatch({ type: "setSecondaryData", payload: secondaryData });
+    }
 
     actionDispatch({ type: "setProgressText", payload: "Fetching notifications" });
     const notifications = await fetchNotifications(configState.config);

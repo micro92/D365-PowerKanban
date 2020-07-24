@@ -193,7 +193,7 @@ export const Board = () => {
 
       actionDispatch({ type: "setProgressText", payload: "Fetching data" });
 
-      const data = await fetchData(config.primaryEntity.logicalName, defaultView.fetchxml, config.primaryEntity.swimLaneSource, defaultForm, metadata, attributeMetadata, appState.retrievePrimaryData);
+      const data = await fetchData(config.primaryEntity.logicalName, defaultView.fetchxml, config.primaryEntity.swimLaneSource, defaultForm, metadata, attributeMetadata, true, appState);
 
       if (config.secondaryEntity) {
         const secondaryData = await fetchData(config.secondaryEntity.logicalName,
@@ -202,7 +202,8 @@ export const Board = () => {
           defaultSecondaryForm,
           secondaryMetadata,
           secondaryAttributeMetadata,
-          null,
+          false,
+          appState,
           {
             additionalFields: [ config.secondaryEntity.parentLookup ],
             additionalCondition: {
