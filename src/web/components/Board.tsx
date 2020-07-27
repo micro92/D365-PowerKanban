@@ -73,6 +73,7 @@ export const Board = () => {
   const [ displayState, setDisplayState ] = React.useState<DisplayState>("simple" as any);
   const [ searchText, setSearch] = React.useState("");
   const [ appliedSearchText, setAppliedSearch ] = React.useState(undefined);
+  const [ preventExternalRefresh, setPreventExternalRefresh ] = React.useState(true);
 
   const getConfigId = async () => {
     if (configState.configId) {
@@ -312,6 +313,16 @@ export const Board = () => {
   const refreshBoard = async () => {
     await refresh(appDispatch, appState, configState, actionDispatch, actionState);
   };
+
+  // Refresh board when external filter IDs change
+  React.useEffect(() => {
+      if (preventExternalRefresh) {
+        setPreventExternalRefresh(false);
+        return; 
+      }
+      
+      refreshBoard();
+  }, [ appState.primaryDataIds ]);
 
   const openConfigSelector = () => {
     actionDispatch({ type: "setConfigSelectorDisplayState", payload: true });

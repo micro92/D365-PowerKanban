@@ -6,14 +6,22 @@ import { NotificationList } from "./NotificationList";
 import { UserInputModal } from "./UserInputModalProps";
 import { ExternalForm } from "./ExternalForm";
 import { useActionState, DisplayType } from "../domain/ActionState";
+import { useAppDispatch } from "../domain/AppState";
 import { useConfigState } from "../domain/ConfigState";
 import { ConfigSelector } from "./ConfigSelector";
 
-interface SplitViewProps { }
+interface SplitViewProps {
+    primaryDataIds?: Array<string>;
+}
 
 export const SplitView = (props: SplitViewProps) => {
     const actionState = useActionState();
     const configState = useConfigState();
+    const appDispatch = useAppDispatch();
+
+    React.useEffect(() => {
+        appDispatch({ type: "setPrimaryDataIds", payload: props.primaryDataIds })
+    }, [props.primaryDataIds]);
 
     return (<>
         <Modal onHide={() => {}} show={!!actionState.progressText} size="lg">

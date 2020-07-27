@@ -77,7 +77,7 @@ const TileRender = (props: TileProps) => {
             const asyncEnd = async (item: { id: string; sourceLane: Option } | undefined, monitor: DragSourceMonitor) => {
                 const dropResult = monitor.getDropResult();
 
-                if (!dropResult || !dropResult?.option?.Value || dropResult.option.Value === item.sourceLane.Value) {
+                if (!dropResult || dropResult?.option?.Value == null || dropResult.option.Value === item.sourceLane.Value) {
                     return;
                 }
 

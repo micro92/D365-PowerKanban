@@ -7,7 +7,8 @@ import { AppProps } from "../components/App";
 type Action = { type: "setBoardData", payload: Array<BoardLane> }
     | { type: "setSecondaryData", payload: Array<any> }
     | { type: "setSubscriptions", payload: {[key: string]: Array<Subscription>}}
-    | { type: "setNotifications", payload: {[key: string]: Array<Notification>}};
+    | { type: "setNotifications", payload: {[key: string]: Array<Notification>}}
+    | { type: "setPrimaryDataIds", payload: Array<string> };
 
 export type AppStateDispatch = (action: Action) => void;
 
@@ -36,6 +37,9 @@ function stateReducer(state: AppStateProps, action: Action): AppStateProps {
         }
         case "setNotifications": {
             return { ...state, notifications: action.payload };
+        }
+        case "setPrimaryDataIds": {
+            return { ...state, primaryDataIds: action.payload };
         }
     }
 }

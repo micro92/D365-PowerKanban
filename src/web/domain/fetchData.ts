@@ -149,7 +149,7 @@ export const fetchData = async (entityName: string, fetchXml: string, swimLaneSo
     return data.reduce((all: Array<BoardLane>, record) => {
       const laneSource = record[swimLaneSource];
 
-      if (!laneSource) {
+      if (laneSource == null) {
         const undefinedLane = all.find(l => l.option.Value === null);
 
         if (undefinedLane) {

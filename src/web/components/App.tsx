@@ -17,7 +17,7 @@ export const App: React.FC<AppProps> = (props) => {
     <AppStateProvider primaryDataIds={props.primaryDataIds}>
       <ActionStateProvider>
         <ConfigStateProvider appId={props.appId} configId={props.configId} primaryEntityLogicalName={props.primaryEntityLogicalName}>
-          <SplitView />
+          <SplitView primaryDataIds={props.primaryDataIds} />
         </ConfigStateProvider>
       </ActionStateProvider>
     </AppStateProvider>
