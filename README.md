@@ -7,8 +7,10 @@ Features so far:
 - Color schemes are taken from option set color values
 - Primary and Secondary entities can be configured, so that you can show accounts and their child cases in one kanban board (choose view Advanced)
 - Swimlanes with Drag and Drop functionality (allowed transitions can be defined for statuscode attributes inside their respective state transitions, or via custom script hook)
+- Record Count as badge per lane
 - Card forms can be used for customizing the display, they are rendered with clickable lookups
 - Side-By-Side view for quick data view AND edit, where all your form scripts are considered (resizable in lower right corner)
+- Modal forms for data view and edit (open per double click on tile or "Open in modal" button)
 - Custom Buttons and Custom Forms on state transition (via custom script support)
 - Search in data, highlighting and filtering
 - Support for subscriptions and notifications to records, so that you can subscribe to record changes and see them
