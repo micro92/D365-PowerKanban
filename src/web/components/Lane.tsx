@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Col, Card } from "react-bootstrap";
+import { Col, Card, Badge } from "react-bootstrap";
 import { Tile } from "./Tile";
 import { BoardLane } from "../domain/BoardLane";
 import { Metadata, Attribute } from "../domain/Metadata";
@@ -77,7 +77,7 @@ const LaneRender = (props: LaneProps) => {
         <div ref={drop} style={{ ...style, minWidth: props.minWidth ?? "400px", margin: "5px", flex: "1" }}>
             <Card style={{borderColor: "#d8d8d8", height: "100%", borderTopColor: borderColor, borderTopWidth: "3px", color: "#333333"}}>
                 <Card.Header>
-                  <Card.Title style={{color: "#045999"}}>{props.lane.option.Label.UserLocalizedLabel.Label}</Card.Title>
+                  <Card.Title style={{color: "#045999"}}>{props.lane.option.Label.UserLocalizedLabel.Label} <a className="float-right"><Badge variant="primary">{props.lane.data.length}</Badge></a></Card.Title>
                 </Card.Header>
                 <Card.Body style={{overflow: "auto"}}>
                     {

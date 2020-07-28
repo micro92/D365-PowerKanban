@@ -5,7 +5,7 @@ import { App, AppProps } from "../components/App";
 import { ParseSearch } from "../domain/ParseSearch";
 import * as WebApiClient from "xrm-webapi-client";
 import { library } from "@fortawesome/fontawesome-svg-core"
-import { faTh, faBell, faBellSlash, faEye, faEyeSlash, faWindowClose, faWindowMaximize, faPlus, faPlusSquare, faAngleDoubleRight, faCircle, faSync, faSearch } from "@fortawesome/free-solid-svg-icons"
+import { faTh, faBell, faBellSlash, faEye, faEyeSlash, faWindowClose, faWindowMaximize, faPlus, faPlusSquare, faAngleDoubleRight, faCircle, faSync, faSearch, faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons"
  
 import DataSetInterfaces = ComponentFramework.PropertyHelper.DataSetApi;
 type DataSet = ComponentFramework.PropertyTypes.DataSet;
@@ -52,7 +52,7 @@ export class PowerKanban implements ComponentFramework.StandardControl<IInputs, 
 		this._context = context;
 		this._container = container;
 
-		library.add(faTh, faBell, faBellSlash, faEye, faEyeSlash, faWindowClose, faWindowMaximize, faPlus, faPlusSquare, faAngleDoubleRight, faCircle, faSync, faSearch);
+		library.add(faTh, faBell, faBellSlash, faEye, faEyeSlash, faWindowClose, faWindowMaximize, faPlus, faPlusSquare, faAngleDoubleRight, faCircle, faSync, faSearch, faExternalLinkAlt);
 
 		this._context.parameters.primaryDataSet.paging.setPageSize(5000);
 	}

@@ -142,6 +142,25 @@ const TileRender = (props: TileProps) => {
         Xrm.Navigation.openForm({ entityName: props.metadata.LogicalName, entityId: props.data[props.metadata?.PrimaryIdAttribute], openInNewWindow: true });
     };
 
+    const openInModal = () => {
+        const input : Xrm.Navigation.PageInputEntityRecord = {
+			pageType: "entityrecord",
+            entityName: props.metadata.LogicalName,
+            entityId: props.data[props.metadata?.PrimaryIdAttribute]
+        }
+
+        const options : Xrm.Navigation.NavigationOptions = {
+			target: 2,
+			width: {
+                value: 70,
+                unit: "%"
+            },
+			position: 1
+		};
+
+        Xrm.Navigation.navigateTo(input, options);
+    };
+
     const createNewSecondary = async () => {
         const parentLookup = configState.config.secondaryEntity.parentLookup;
         const data = {
@@ -217,7 +236,7 @@ const TileRender = (props: TileProps) => {
 
     return (
         <div ref={ props.preventDrag ? stub : drag}>
-            <Card style={{opacity, marginBottom: "5px", borderColor: "#d8d8d8", borderLeftColor: props.borderColor, borderLeftWidth: "3px", ...props.style}}>
+            <Card onDoubleClick={openInModal} style={{opacity, marginBottom: "5px", borderColor: "#d8d8d8", borderLeftColor: props.borderColor, borderLeftWidth: "3px", ...props.style}}>
                 <Card.Header style={{ padding: "10px" }}>
                     <div style={{display: "flex", flexDirection: "row"}}>
                         <div style={{display: "flex", flex: "1", overflow: "auto", flexDirection: "column", color: "#666666" }}>
@@ -239,7 +258,8 @@ const TileRender = (props: TileProps) => {
                         </Dropdown>}
                         <DropdownButton id="displaySelector" variant="outline-secondary" title="" style={{ margintop: "5px" }}>
                             <Dropdown.Item onClick={setSelectedRecord} as="button" id="setSelected"><FontAwesomeIcon icon="angle-double-right" /> Open in split screen</Dropdown.Item>
-                            <Dropdown.Item onClick={openInNewTab} as="button" id="setSelected"><FontAwesomeIcon icon="window-maximize" /> Open in new window</Dropdown.Item>
+                            <Dropdown.Item onClick={openInNewTab} as="button" id="setSelected"><FontAwesomeIcon icon="external-link-alt" /> Open in new window</Dropdown.Item>
+                            <Dropdown.Item onClick={openInModal} as="button" id="openModal"><FontAwesomeIcon icon="window-maximize" /> Open in modal</Dropdown.Item>
                             { secondaryConfig && <Dropdown.Item onClick={createNewSecondary} as="button" id="addSecondary"><FontAwesomeIcon icon="plus" /> Create new {secondaryMetadata.DisplayName.UserLocalizedLabel.Label}</Dropdown.Item> }
                             {
                                 props.config.customButtons && props.config.customButtons.length &&
