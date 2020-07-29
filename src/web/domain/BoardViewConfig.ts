@@ -30,8 +30,6 @@ export interface PrimaryEntity extends BoardEntity {
 }
 
 export interface BoardViewConfig {
-    defaultViewId: string;
-    notificationCardFormId: string;
     primaryEntity: PrimaryEntity;
     secondaryEntity: SecondaryEntity;
     customScriptUrl: string;

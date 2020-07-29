@@ -39,7 +39,27 @@ Todos:
 
 # Installation
 - Download and install the [latest managed solution](/../../releases/latest)
-- Create at least one "PowerKanban Config" record for each entity where you want to use PowerKanban. Give it a unique name and enter a configuration json such as the following into the value field:
+- Create at least one "PowerKanban Config" record for each entity where you want to use PowerKanban. Give it a unique name and enter a configuration json such as the following into the value field.
+- Enable the PCF control for the entity you like and pass the unique name of the PowerKanban config you created as 'configName' property inside the PCF control if you want to use this config on start automatically. If you don't pass one, the kanban board will load with the config selector by default.
+
+## Basic config
+```json
+{
+    "primaryEntity": {
+        "allowTransitions": true,
+        "logicalName": "incident",
+        "swimLaneSource": "statuscode"
+    },
+    "secondaryEntity": {
+        "allowTransitions": true,
+        "logicalName": "task",
+        "parentLookup": "regardingobjectid",
+        "swimLaneSource": "statuscode"
+    }
+}
+```
+
+## Config with enabled subscription and notification feature
 ```json
 {
     "primaryEntity": {
@@ -50,10 +70,6 @@ Todos:
         "subscriptionLookup": "oss_incidentid",
         "transitionCallback": "boardViewExtender.onStateTransition"
     },
-    "defaultViewId": "",
-    "showCreateButton": true,
-    "showDeleteButton": true,
-    "showDeactivateButton": true,
     "secondaryEntity": {
         "allowTransitions": true,
         "logicalName": "task",
@@ -61,12 +77,28 @@ Todos:
         "parentLookup": "regardingobjectid",
         "subscriptionLookup": "oss_taskid",
         "swimLaneSource": "statuscode"
+    }
+}
+```
+
+## Config with custom code callback on primary record drag and drop
+```json
+{
+    "primaryEntity": {
+        "allowTransitions": true,
+        "logicalName": "incident",
+        "swimLaneSource": "statuscode",
+        "transitionCallback": "boardViewExtender.onStateTransition"
+    },
+    "secondaryEntity": {
+        "allowTransitions": true,
+        "logicalName": "task",
+        "parentLookup": "regardingobjectid",
+        "swimLaneSource": "statuscode"
     },
     "customScriptUrl": "/WebResources/oss_/D365BoardView/js/exampleExternalScript.js"
 }
 ```
-The notificationLookup and subscriptionLookup properties on primaryEntity and secondaryEntity can be omitted if you don't want to use the subscription / notification features.
-- Enable the PCF control for the entity you like and pass the unique name of the PowerKanban config you created as 'configName' property inside the PCF control if you want to use this config on start automatically. If you don't pass one, the kanban board will load with the config selector by default.
 
 # Configuration
 
@@ -90,7 +122,6 @@ Below JSON schema describes the structure of the configuration:
                 "notificationLookup": "oss_incidentid",
                 "transitionCallback": "boardViewExtender.onStateTransition"
             },
-            "defaultViewId": "",
             "secondaryEntity": {
                 "allowTransitions": true,
                 "logicalName": "task",
@@ -189,16 +220,6 @@ Below JSON schema describes the structure of the configuration:
                 }
             },
             "additionalProperties": true
-        },
-        "defaultViewId": {
-            "$id": "#/properties/defaultViewId",
-            "type": "string",
-            "title": "defaultViewId",
-            "description": "The default view to use on start for this entity. If empty, it will just use the first one which is fetched",
-            "default": "",
-            "examples": [
-                ""
-            ]
         },
         "secondaryEntity": {
             "$id": "#/properties/secondaryEntity",
