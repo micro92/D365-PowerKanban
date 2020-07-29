@@ -14,7 +14,7 @@ interface FieldRowProps {
 
 const FieldRowRender = (props: FieldRowProps) => {
     const openRecord = (event: any) => {
-        const [entity, id] = event.target.id.split("_");
+        const [entity, id] = event.target.id.split(".");
         Xrm.Navigation.openForm({ entityName: entity, entityId: id, openInNewWindow: true });
     };
 
@@ -42,7 +42,7 @@ const FieldRowRender = (props: FieldRowProps) => {
 
         if (lookupFormatted) {
             const targetEntity = props.data[`_${fieldName}_value@Microsoft.Dynamics.CRM.lookuplogicalname`];
-            return (<Button style={{padding: "0px"}} id={`${targetEntity}_${props.data[`_${fieldName}_value`]}`} onClick={openRecord} variant="link">{highlightSearch(lookupFormatted)}</Button>);
+            return (<Button style={{padding: "0px"}} id={`${targetEntity}.${props.data[`_${fieldName}_value`]}`} onClick={openRecord} variant="link">{highlightSearch(lookupFormatted)}</Button>);
         }
 
         return highlightSearch(props.data[fieldName]);
