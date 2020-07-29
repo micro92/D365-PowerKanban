@@ -67,3 +67,246 @@ Todos:
 ```
 The notificationLookup and subscriptionLookup properties on primaryEntity and secondaryEntity can be omitted if you don't want to use the subscription / notification features.
 - Enable the PCF control for the entity you like and pass the unique name of the PowerKanban config you created as 'configName' property inside the PCF control if you want to use this config on start automatically. If you don't pass one, the kanban board will load with the config selector by default.
+
+# Configuration
+
+Below JSON schema describes the structure of the configuration:
+
+```JSON
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "title": "PowerKanban Config",
+    "description": "The schema of a complete PowerKanban configuration object",
+    "default": {},
+    "examples": [
+        {
+            "primaryEntity": {
+                "allowTransitions": true,
+                "logicalName": "incident",
+                "swimLaneSource": "statuscode",
+                "subscriptionLookup": "oss_incidentid",
+                "notificationLookup": "oss_incidentid",
+                "transitionCallback": "boardViewExtender.onStateTransition"
+            },
+            "defaultViewId": "",
+            "secondaryEntity": {
+                "allowTransitions": true,
+                "logicalName": "task",
+                "parentLookup": "regardingobjectid",
+                "swimLaneSource": "statuscode",
+                "subscriptionLookup": "oss_taskid",
+                "notificationLookup": "oss_taskid"
+            },
+            "customScriptUrl": "/WebResources/oss_/D365BoardView/js/exampleExternalScript.js"
+        }
+    ],
+    "required": [
+        "primaryEntity"
+    ],
+    "properties": {
+        "primaryEntity": {
+            "$id": "#/properties/primaryEntity",
+            "type": "object",
+            "title": "The primaryEntity schema",
+            "description": "This configures settings regarding the primary entity in a PowerKanban board. It is always needed",
+            "default": {},
+            "examples": [
+                {
+                    "allowTransitions": true,
+                    "logicalName": "incident",
+                    "swimLaneSource": "statuscode",
+                    "subscriptionLookup": "oss_incidentid",
+                    "notificationLookup": "oss_incidentid",
+                    "transitionCallback": "boardViewExtender.onStateTransition"
+                }
+            ],
+            "required": [
+                "logicalName",
+                "swimLaneSource",
+            ],
+            "properties": {
+                "allowTransitions": {
+                    "$id": "#/properties/primaryEntity/properties/allowTransitions",
+                    "type": "boolean",
+                    "title": "allowTransitions",
+                    "description": "This defines whether drag and drop will be enabled. If not defined, it will default to false",
+                    "default": false,
+                    "examples": [
+                        true
+                    ]
+                },
+                "logicalName": {
+                    "$id": "#/properties/primaryEntity/properties/logicalName",
+                    "type": "string",
+                    "title": "logicalName",
+                    "description": "This is the logical name of this entity. Needs to be set.",
+                    "default": "",
+                    "examples": [
+                        "incident"
+                    ]
+                },
+                "swimLaneSource": {
+                    "$id": "#/properties/primaryEntity/properties/swimLaneSource",
+                    "type": "string",
+                    "title": "swimLaneSource",
+                    "description": "This defines which field to use for splitting data up into lanes. Always needed.",
+                    "default": "",
+                    "examples": [
+                        "statuscode"
+                    ]
+                },
+                "subscriptionLookup": {
+                    "$id": "#/properties/primaryEntity/properties/subscriptionLookup",
+                    "type": "string",
+                    "title": "subscriptionLookup",
+                    "description": "When using the subscription and notification feature, you need to create a new lookup on the subscription entity which points to the entity for which you want to subscribe for notifications. Pass the name of the lookup you created in here. If left out, subscription and notification controls will be unavailable",
+                    "default": "",
+                    "examples": [
+                        "oss_incidentid"
+                    ]
+                },
+                "notificationLookup": {
+                    "$id": "#/properties/primaryEntity/properties/notificationLookup",
+                    "type": "string",
+                    "title": "notificationLookup",
+                    "description": "When using the subscription and notification feature, you need to create a new lookup on the notification entity which points to the entity for which you want to receive notifications. Pass the name of the lookup you created in here. If left out, subscription and notification controls will be unavailable",
+                    "default": "",
+                    "examples": [
+                        "oss_incidentid"
+                    ]
+                },
+                "transitionCallback": {
+                    "$id": "#/properties/primaryEntity/properties/transitionCallback",
+                    "type": "string",
+                    "title": "transitionCallback",
+                    "description": "You can provide a custom function which runs on status transition of a record. You need to pass the function name, which may contain namespaces as well. If not passed, default behaviours will apply.",
+                    "default": "",
+                    "examples": [
+                        "boardViewExtender.onStateTransition"
+                    ]
+                }
+            },
+            "additionalProperties": true
+        },
+        "defaultViewId": {
+            "$id": "#/properties/defaultViewId",
+            "type": "string",
+            "title": "defaultViewId",
+            "description": "The default view to use on start for this entity. If empty, it will just use the first one which is fetched",
+            "default": "",
+            "examples": [
+                ""
+            ]
+        },
+        "secondaryEntity": {
+            "$id": "#/properties/secondaryEntity",
+            "type": "object",
+            "title": "secondaryEntity",
+            "description": "Configure a secondary entity in here, which can be displayed in separate swim lanes per primary record when switching to the advanced view.",
+            "default": {},
+            "examples": [
+                {
+                    "allowTransitions": true,
+                    "logicalName": "task",
+                    "parentLookup": "regardingobjectid",
+                    "swimLaneSource": "statuscode",
+                    "subscriptionLookup": "oss_taskid",
+                    "notificationLookup": "oss_taskid",
+                    "transitionCallback": "boardViewExtender.onSecondaryStateTransition"
+                }
+            ],
+            "required": [
+                "logicalName",
+                "parentLookup",
+                "swimLaneSource"
+            ],
+            "properties": {
+                "allowTransitions": {
+                    "$id": "#/properties/secondaryEntity/properties/allowTransitions",
+                    "type": "boolean",
+                    "title": "allowTransitions",
+                    "description": "This defines whether drag and drop will be enabled. If not defined, it will default to false",
+                    "default": false,
+                    "examples": [
+                        true
+                    ]
+                },
+                "logicalName": {
+                    "$id": "#/properties/secondaryEntity/properties/logicalName",
+                    "type": "string",
+                    "title": "logicalName",
+                    "description": "This is the logical name of this entity. Needs to be set.",
+                    "default": "",
+                    "examples": [
+                        "task"
+                    ]
+                },
+                "parentLookup": {
+                    "$id": "#/properties/secondaryEntity/properties/parentLookup",
+                    "type": "string",
+                    "title": "parentLookup",
+                    "description": "Name of the lookup over which secondary entity is connected to primary entity. Used for displaying secondary records with their matching primary record. Always needed.",
+                    "default": "",
+                    "examples": [
+                        "regardingobjectid"
+                    ]
+                },
+                "swimLaneSource": {
+                    "$id": "#/properties/secondaryEntity/properties/swimLaneSource",
+                    "type": "string",
+                    "title": "swimLaneSource",
+                    "description": "This defines which field to use for splitting data up into lanes. Always needed.",
+                    "default": "",
+                    "examples": [
+                        "statuscode"
+                    ]
+                },
+                "subscriptionLookup": {
+                    "$id": "#/properties/secondaryEntity/properties/subscriptionLookup",
+                    "type": "string",
+                    "title": "subscriptionLookup",
+                    "description": "When using the subscription and notification feature, you need to create a new lookup on the notification entity which points to the entity for which you want to receive notifications. Pass the name of the lookup you created in here. If left out, subscription and notification controls will be unavailable",
+                    "default": "",
+                    "examples": [
+                        "oss_taskid"
+                    ]
+                },
+                "notificationLookup": {
+                    "$id": "#/properties/secondaryEntity/properties/notificationLookup",
+                    "type": "string",
+                    "title": "notificationLookup",
+                    "description": "When using the subscription and notification feature, you need to create a new lookup on the notification entity which points to the entity for which you want to receive notifications. Pass the name of the lookup you created in here. If left out, subscription and notification controls will be unavailable",
+                    "default": "",
+                    "examples": [
+                        "oss_taskid"
+                    ]
+                },
+                "transitionCallback": {
+                    "$id": "#/properties/secondaryEntity/properties/transitionCallback",
+                    "type": "string",
+                    "title": "transitionCallback",
+                    "description": "You can provide a custom function which runs on status transition of a record. You need to pass the function name, which may contain namespaces as well. If not passed, default behaviours will apply.",
+                    "default": "",
+                    "examples": [
+                        "boardViewExtender.onSecondaryStateTransition"
+                    ]
+                }
+            },
+            "additionalProperties": true
+        },
+        "customScriptUrl": {
+            "$id": "#/properties/customScriptUrl",
+            "type": "string",
+            "title": "customScriptUrl",
+            "description": "When using custom logic such as transitionCallbacks, you need to provide the url to the web resource where your custom code can be found, so that it can be fetched on load.",
+            "default": "",
+            "examples": [
+                "/WebResources/oss_/D365BoardView/js/exampleExternalScript.js"
+            ]
+        }
+    },
+    "additionalProperties": true
+}
+```

@@ -237,14 +237,6 @@ export const Board = () => {
 
   };
 
-  const newRecord = async () => {
-    const result = await Xrm.Navigation.openForm({ entityName: configState.config.primaryEntity.logicalName, useQuickCreateForm: true }, undefined);
-
-    if (result && result.savedEntityReference) {
-      refreshBoard();
-    }
-  };
-
   const setView = (event: any) => {
     const viewId = event.target.id;
     const view = views.find(v => v.savedqueryid === viewId);
@@ -320,7 +312,7 @@ export const Board = () => {
         setPreventExternalRefresh(false);
         return; 
       }
-      
+
       refreshBoard();
   }, [ appState.primaryDataIds ]);
 
@@ -450,7 +442,6 @@ export const Board = () => {
                 </>
               }
             </Button>
-            { configState.config && configState.config.showCreateButton && <Button style={{marginLeft: "5px"}}  variant="outline-primary" onClick={newRecord}>Create New</Button> }
             <Button variant="outline-primary" style={{marginLeft: "5px"}} onClick={refreshBoard}>
               <FontAwesomeIcon icon="sync" />
             </Button>

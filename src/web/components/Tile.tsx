@@ -142,7 +142,7 @@ const TileRender = (props: TileProps) => {
         Xrm.Navigation.openForm({ entityName: props.metadata.LogicalName, entityId: props.data[props.metadata?.PrimaryIdAttribute], openInNewWindow: true });
     };
 
-    const openInModal = () => {
+    const openInModal = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
         const input : Xrm.Navigation.PageInputEntityRecord = {
 			pageType: "entityrecord",
             entityName: props.metadata.LogicalName,
@@ -159,6 +159,7 @@ const TileRender = (props: TileProps) => {
 		};
 
         Xrm.Navigation.navigateTo(input, options);
+        e.stopPropagation();
     };
 
     const createNewSecondary = async () => {

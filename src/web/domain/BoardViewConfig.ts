@@ -32,9 +32,6 @@ export interface PrimaryEntity extends BoardEntity {
 export interface BoardViewConfig {
     defaultViewId: string;
     notificationCardFormId: string;
-    showCreateButton: boolean;
-    showDeleteButton: boolean;
-    showDeactivateButton: boolean;
     primaryEntity: PrimaryEntity;
     secondaryEntity: SecondaryEntity;
     customScriptUrl: string;
