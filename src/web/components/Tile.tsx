@@ -123,7 +123,8 @@ const TileRender = (props: TileProps) => {
         },
         collect: (monitor) => ({
           isDragging: monitor.isDragging()
-        })
+        }),
+        canDrag: () => !props.config.preventTransitions
     });
 
     const opacity = isDragging ? 0.4 : 1;
@@ -143,6 +144,8 @@ const TileRender = (props: TileProps) => {
     };
 
     const openInModal = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+        e.stopPropagation();
+
         const input : Xrm.Navigation.PageInputEntityRecord = {
 			pageType: "entityrecord",
             entityName: props.metadata.LogicalName,
@@ -158,8 +161,8 @@ const TileRender = (props: TileProps) => {
 			position: 1
 		};
 
-        Xrm.Navigation.navigateTo(input, options);
-        e.stopPropagation();
+        Xrm.Navigation.navigateTo(input, options)
+        .then(() => props.refresh(), () => props.refresh());
     };
 
     const createNewSecondary = async () => {

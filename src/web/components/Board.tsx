@@ -112,10 +112,6 @@ export const Board = () => {
       const attributeMetadata = await fetchSeparatorMetadata(config.primaryEntity.logicalName, config.primaryEntity.swimLaneSource, metadata);
       const stateMetadata = await fetchSeparatorMetadata(config.primaryEntity.logicalName, "statecode", metadata);
 
-      const lanes = attributeMetadata.AttributeType === "Boolean"
-        ? [ attributeMetadata.OptionSet.FalseOption.Value, attributeMetadata.OptionSet.TrueOption.Value ]
-        : attributeMetadata.OptionSet.Options.map(o => o.Value);
-
       const notificationMetadata = await fetchMetadata("oss_notification");
       configDispatch({ type: "setSecondaryMetadata", payload: { entity: "oss_notification", data: notificationMetadata } });
 
@@ -128,10 +124,6 @@ export const Board = () => {
 
         configDispatch({ type: "setSecondaryMetadata", payload: { entity: config.secondaryEntity.logicalName, data: secondaryMetadata } });
         configDispatch({ type: "setSecondarySeparatorMetadata", payload: secondaryAttributeMetadata });
-
-        const secondaryLanes = secondaryAttributeMetadata.AttributeType === "Boolean"
-        ? [ secondaryAttributeMetadata.OptionSet.FalseOption.Value, secondaryAttributeMetadata.OptionSet.TrueOption.Value ]
-        : secondaryAttributeMetadata.OptionSet.Options.map(o => o.Value);
       }
 
       configDispatch({ type: "setConfig", payload: config });
@@ -140,19 +132,24 @@ export const Board = () => {
       configDispatch({ type: "setStateMetadata", payload: stateMetadata });
       actionDispatch({ type: "setProgressText", payload: "Fetching views" });
 
-      const { value: views} = await WebApiClient.Retrieve({entityName: "savedquery", queryParams: `?$select=layoutxml,fetchxml,savedqueryid,name&$filter=returnedtypecode eq '${config.primaryEntity.logicalName}' and querytype eq 0`});
+      const { value: views}: { value: Array<SavedQuery> } = await WebApiClient.Retrieve({entityName: "savedquery", queryParams: `?$select=layoutxml,fetchxml,savedqueryid,name&$filter=returnedtypecode eq '${config.primaryEntity.logicalName}' and querytype eq 0`});
       setViews(views);
 
       let defaultSecondaryView;
       if (config.secondaryEntity) {
-        const { value: secondaryViews} = await WebApiClient.Retrieve({entityName: "savedquery", queryParams: `?$select=layoutxml,fetchxml,savedqueryid,name&$filter=returnedtypecode eq '${config.secondaryEntity.logicalName}' and querytype eq 0`});
+        const { value: secondaryViews }: { value: Array<SavedQuery>} = await WebApiClient.Retrieve({entityName: "savedquery", queryParams: `?$select=layoutxml,fetchxml,savedqueryid,name&$filter=returnedtypecode eq '${config.secondaryEntity.logicalName}' and querytype eq 0`});
         setSecondaryViews(secondaryViews);
-        defaultSecondaryView = secondaryViews[0];
+
+        defaultSecondaryView = config.secondaryEntity.defaultView
+          ? secondaryViews.find(v => [v.savedqueryid, v.name].map(i => i.toLowerCase()).includes(config.secondaryEntity.defaultView.toLowerCase())) ?? secondaryViews[0]
+          : secondaryViews[0];
 
         actionDispatch({ type: "setSelectedSecondaryView", payload: defaultSecondaryView });
       }
 
-      const defaultView = views[0];
+      const defaultView = config.primaryEntity.defaultView
+          ? views.find(v => [v.savedqueryid, v.name].map(i => i.toLowerCase()).includes(config.primaryEntity.defaultView.toLowerCase())) ?? views[0]
+          : views[0];
 
       actionDispatch({ type: "setSelectedView", payload: defaultView });
       actionDispatch({ type: "setProgressText", payload: "Fetching forms" });
@@ -420,7 +417,7 @@ export const Board = () => {
                 onKeyPress={onSearchKey}
                 placeholder="Filter records"
               />
-              <InputGroup.Append>
+              <InputGroup.Append style={{ zIndex: 0 }}>
                 <Button variant="outline-secondary" onClick={search}><FontAwesomeIcon icon="search" /></Button>
               </InputGroup.Append>
             </InputGroup>

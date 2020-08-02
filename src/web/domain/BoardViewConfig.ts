@@ -13,7 +13,8 @@ export interface BoardEntity {
     transitionCallback: string;
     notificationLookup: string;
     subscriptionLookup: string;
-    allowTransitions: boolean;
+    preventTransitions: boolean;
+    defaultView: string;
     customButtons: Array<CustomButton>;
 }
 

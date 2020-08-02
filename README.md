@@ -46,12 +46,10 @@ Todos:
 ```json
 {
     "primaryEntity": {
-        "allowTransitions": true,
         "logicalName": "incident",
         "swimLaneSource": "statuscode"
     },
     "secondaryEntity": {
-        "allowTransitions": true,
         "logicalName": "task",
         "parentLookup": "regardingobjectid",
         "swimLaneSource": "statuscode"
@@ -63,7 +61,6 @@ Todos:
 ```json
 {
     "primaryEntity": {
-        "allowTransitions": true,
         "logicalName": "incident",
         "swimLaneSource": "statuscode",
         "notificationLookup": "oss_incidentid",
@@ -71,7 +68,6 @@ Todos:
         "transitionCallback": "boardViewExtender.onStateTransition"
     },
     "secondaryEntity": {
-        "allowTransitions": true,
         "logicalName": "task",
         "notificationLookup": "oss_taskid",
         "parentLookup": "regardingobjectid",
@@ -85,13 +81,11 @@ Todos:
 ```json
 {
     "primaryEntity": {
-        "allowTransitions": true,
         "logicalName": "incident",
         "swimLaneSource": "statuscode",
         "transitionCallback": "boardViewExtender.onStateTransition"
     },
     "secondaryEntity": {
-        "allowTransitions": true,
         "logicalName": "task",
         "parentLookup": "regardingobjectid",
         "swimLaneSource": "statuscode"
@@ -115,20 +109,23 @@ Below JSON schema describes the structure of the configuration:
     "examples": [
         {
             "primaryEntity": {
-                "allowTransitions": true,
                 "logicalName": "incident",
                 "swimLaneSource": "statuscode",
                 "subscriptionLookup": "oss_incidentid",
                 "notificationLookup": "oss_incidentid",
-                "transitionCallback": "boardViewExtender.onStateTransition"
+                "transitionCallback": "boardViewExtender.onStateTransition",
+                "defaultView": "All Cases",
+                "preventTransitions": false
             },
             "secondaryEntity": {
-                "allowTransitions": true,
                 "logicalName": "task",
                 "parentLookup": "regardingobjectid",
                 "swimLaneSource": "statuscode",
                 "subscriptionLookup": "oss_taskid",
-                "notificationLookup": "oss_taskid"
+                "notificationLookup": "oss_taskid",
+                "transitionCallback": "boardViewExtender.onSecondaryStateTransition",
+                "defaultView": "All Tasks",
+                "preventTransitions": false
             },
             "customScriptUrl": "/WebResources/oss_/D365BoardView/js/exampleExternalScript.js"
         }
@@ -145,12 +142,13 @@ Below JSON schema describes the structure of the configuration:
             "default": {},
             "examples": [
                 {
-                    "allowTransitions": true,
                     "logicalName": "incident",
                     "swimLaneSource": "statuscode",
                     "subscriptionLookup": "oss_incidentid",
                     "notificationLookup": "oss_incidentid",
-                    "transitionCallback": "boardViewExtender.onStateTransition"
+                    "transitionCallback": "boardViewExtender.onStateTransition",
+                    "defaultView": "All Cases",
+                    "preventTransitions": false
                 }
             ],
             "required": [
@@ -158,16 +156,6 @@ Below JSON schema describes the structure of the configuration:
                 "swimLaneSource",
             ],
             "properties": {
-                "allowTransitions": {
-                    "$id": "#/properties/primaryEntity/properties/allowTransitions",
-                    "type": "boolean",
-                    "title": "allowTransitions",
-                    "description": "This defines whether drag and drop will be enabled. If not defined, it will default to false",
-                    "default": false,
-                    "examples": [
-                        true
-                    ]
-                },
                 "logicalName": {
                     "$id": "#/properties/primaryEntity/properties/logicalName",
                     "type": "string",
@@ -217,6 +205,27 @@ Below JSON schema describes the structure of the configuration:
                     "examples": [
                         "boardViewExtender.onStateTransition"
                     ]
+                },
+                "defaultView": {
+                    "$id": "#/properties/primaryEntity/properties/defaultView",
+                    "type": "string",
+                    "title": "defaultView",
+                    "description": "Provide a default view which will be selected initially. You can either pass the view name or the ID (without curly brackets). Case is ignored in all scenarios.",
+                    "default": "First fetched view",
+                    "examples": [
+                        "All Cases",
+                        "2B5F5A5D-2D23-4FE7-AA58-E77995368AE7"
+                    ]
+                },
+                "preventTransitions": {
+                    "$id": "#/properties/primaryEntity/properties/preventTransitions",
+                    "type": "boolean",
+                    "title": "preventTransitions",
+                    "description": "This defines whether drag and drop will be prevented. If not defined, it will default to false and no drag and drop will be possible",
+                    "default": false,
+                    "examples": [
+                        true
+                    ]
                 }
             },
             "additionalProperties": true
@@ -229,13 +238,14 @@ Below JSON schema describes the structure of the configuration:
             "default": {},
             "examples": [
                 {
-                    "allowTransitions": true,
                     "logicalName": "task",
                     "parentLookup": "regardingobjectid",
                     "swimLaneSource": "statuscode",
                     "subscriptionLookup": "oss_taskid",
                     "notificationLookup": "oss_taskid",
-                    "transitionCallback": "boardViewExtender.onSecondaryStateTransition"
+                    "transitionCallback": "boardViewExtender.onSecondaryStateTransition",
+                    "defaultView": "All Tasks",
+                    "preventTransitions": false
                 }
             ],
             "required": [
@@ -244,16 +254,6 @@ Below JSON schema describes the structure of the configuration:
                 "swimLaneSource"
             ],
             "properties": {
-                "allowTransitions": {
-                    "$id": "#/properties/secondaryEntity/properties/allowTransitions",
-                    "type": "boolean",
-                    "title": "allowTransitions",
-                    "description": "This defines whether drag and drop will be enabled. If not defined, it will default to false",
-                    "default": false,
-                    "examples": [
-                        true
-                    ]
-                },
                 "logicalName": {
                     "$id": "#/properties/secondaryEntity/properties/logicalName",
                     "type": "string",
@@ -312,6 +312,27 @@ Below JSON schema describes the structure of the configuration:
                     "default": "",
                     "examples": [
                         "boardViewExtender.onSecondaryStateTransition"
+                    ]
+                },
+                "defaultView": {
+                    "$id": "#/properties/secondaryEntity/properties/defaultView",
+                    "type": "string",
+                    "title": "defaultView",
+                    "description": "Provide a default view which will be selected initially. You can either pass the view name or the ID (without curly brackets). Case is ignored in all scenarios.",
+                    "default": "First fetched view",
+                    "examples": [
+                        "All Tasks",
+                        "2B5F5A5D-2D23-4FE7-AA58-E77995368AE7"
+                    ]
+                },
+                "preventTransitions": {
+                    "$id": "#/properties/secondaryEntity/properties/preventTransitions",
+                    "type": "boolean",
+                    "title": "preventTransitions",
+                    "description": "This defines whether drag and drop will be prevented. If not defined, it will default to false and no drag and drop will be possible",
+                    "default": false,
+                    "examples": [
+                        true
                     ]
                 }
             },
