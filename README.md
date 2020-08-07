@@ -77,7 +77,7 @@ Todos:
     "customScriptUrl": "/WebResources/oss_/D365BoardView/js/exampleExternalScript.js"
 }
 ```
-> customScriptUrl is needed when you have transitionCallback configured on either primary or secondary entity
+> customScriptUrl is only needed when you have transitionCallback configured on either primary or secondary entity
 
 ## Config with custom code callback on primary record drag and drop
 ```json
