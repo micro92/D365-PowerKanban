@@ -352,3 +352,32 @@ Below JSON schema describes the structure of the configuration:
     "additionalProperties": true
 }
 ```
+
+# Create automatic notifications on events
+You need to configure the Xrm.Oss.PowerKanban.CreateNotification plugin with new plugin steps registered to the entity events that interest you.
+
+## Examples
+### Events on subscribed record
+A plugin for notifying users when the description of a case (that they subscribed to) can be created with this configuration:
+
+```JSON
+{
+    "subscriptionLookupName": "oss_incidentid",
+    "notificationLookupName": "oss_incidentid",
+    "notifyCurrentUser": false,
+    "capturedFields": [ "description" ]
+}
+```
+
+### Events on sub entity of subscribed record
+A plugin configuration for notifying users when a new task is created regarding a case (that they subscribed to) can be created with this configuration:
+
+```JSON
+{
+    "parentLookupName": "regardingobjectid",
+    "subscriptionLookupName": "oss_taskid",
+    "notificationLookupName": "oss_taskid",
+    "notifyCurrentUser": false,
+    "capturedFields": [ "description" ]
+}
+```
