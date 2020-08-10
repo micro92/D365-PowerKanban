@@ -16,6 +16,7 @@ Features so far:
 - Support for subscriptions and notifications to records, so that you can subscribe to record changes and see them
 - Custom Dialogs, for allowing to also resolve cases, win opportunities etc from the board
 - Works on entity lists as well as on form subgrids
+- Columns that contain html (such as email descriptions) are converted to plain text
 
 Todos:
 - Virtualization and Performance Tweaking
