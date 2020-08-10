@@ -156,7 +156,7 @@ export const fetchData = async (entityName: string, fetchXml: string, swimLaneSo
           undefinedLane.data.push(record);
         }
         else {
-          all.push({ option: { Value: null, Color: "#777", Label: { UserLocalizedLabel: "None" } } as any, data: [ record ] });
+          all.push({ option: { Value: null, Color: "#777", Label: { UserLocalizedLabel: { Label: "None" } } } as any, data: [ record ] });
         }
 
         return all;

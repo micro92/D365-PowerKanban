@@ -3,6 +3,7 @@ import { Col, Card, Button } from "react-bootstrap";
 import { CardCell } from "../domain/CardForm";
 import { Metadata } from "../domain/Metadata";
 import { RegexEscape } from "../domain/RegexEscape";
+import * as htmlToText from "html-to-text";
 
 interface FieldRowProps {
     cells: Array<CardCell>;
@@ -31,6 +32,8 @@ const FieldRowRender = (props: FieldRowProps) => {
         </span>);
     };
 
+    const toPlainText = (text: string): string => text != null && text.indexOf("<html>") !== -1 ? htmlToText.fromString(text) : text;
+
     const getData = (fieldName: string): React.ReactNode => {
         const formattedValue = props.data[`${fieldName}@OData.Community.Display.V1.FormattedValue`];
 
@@ -45,7 +48,9 @@ const FieldRowRender = (props: FieldRowProps) => {
             return (<Button style={{padding: "0px"}} id={`${targetEntity}.${props.data[`_${fieldName}_value`]}`} onClick={openRecord} variant="link">{highlightSearch(lookupFormatted)}</Button>);
         }
 
-        return highlightSearch(props.data[fieldName]);
+        const value = toPlainText(props.data[fieldName]);
+
+        return highlightSearch(value);
     };
 
     // tslint:disable-next-line: no-null-keyword

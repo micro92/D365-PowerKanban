@@ -16,6 +16,8 @@ export interface BoardEntity {
     preventTransitions: boolean;
     defaultView: string;
     customButtons: Array<CustomButton>;
+    fitLanesToScreenWidth: boolean;
+    hideCountOnLane: boolean;
 }
 
 export interface SecondaryEntity extends BoardEntity {
