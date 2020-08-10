@@ -74,10 +74,10 @@ const LaneRender = (props: LaneProps) => {
     );
 
     return (
-        <div ref={drop} style={{ ...style, minWidth: !props.config.fitLanesToScreenWidth ? (props.minWidth ?? "400px") : (props.lane.data.length ? "auto" : "0"), marginTop: "5px", marginBottom: "5px", marginLeft: "2.5px", marginRight: "2.5px", flex: "1" }}>
+        <div ref={drop} style={{ ...style, minWidth: !props.config.fitLanesToScreenWidth ? (props.minWidth ?? "400px") : (props.lane.data.length ? "auto" : "10px"), marginTop: "5px", marginBottom: "5px", marginLeft: "2.5px", marginRight: "2.5px", flex: "1" }}>
             <Card style={{borderColor: "#d8d8d8", height: "100%", borderTopColor: borderColor, borderTopWidth: "3px", color: "#333333"}}>
                 <Card.Header>
-                  <Card.Title title={props.lane.option.Label.UserLocalizedLabel.Label} style={{color: "#045999", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>{props.lane.option.Label.UserLocalizedLabel.Label} { !props.config.hideCountOnLane && <a className="float-right"><Badge variant="primary">{props.lane.data.length}</Badge></a> }</Card.Title>
+                  <Card.Title title={props.lane.option.Label.UserLocalizedLabel.Label} style={{ padding: "0.75rem, 0.75rem", color: "#045999", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>{props.lane.option.Label.UserLocalizedLabel.Label} { !props.config.hideCountOnLane && <a style={{position: "absolute", right: "5px"}}><Badge variant="primary">{props.lane.data.length}</Badge></a> }</Card.Title>
                 </Card.Header>
                 <Card.Body style={{overflow: "auto"}}>
                     {
