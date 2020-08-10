@@ -109,39 +109,12 @@ Below JSON schema describes the structure of the configuration:
     "title": "PowerKanban Config",
     "description": "The schema of a complete PowerKanban configuration object",
     "default": {},
-    "examples": [
-        {
-            "primaryEntity": {
-                "logicalName": "incident",
-                "swimLaneSource": "statuscode",
-                "subscriptionLookup": "oss_incidentid",
-                "notificationLookup": "oss_incidentid",
-                "transitionCallback": "boardViewExtender.onStateTransition",
-                "defaultView": "All Cases",
-                "preventTransitions": false
-            },
-            "secondaryEntity": {
-                "logicalName": "task",
-                "parentLookup": "regardingobjectid",
-                "swimLaneSource": "statuscode",
-                "subscriptionLookup": "oss_taskid",
-                "notificationLookup": "oss_taskid",
-                "transitionCallback": "boardViewExtender.onSecondaryStateTransition",
-                "defaultView": "All Tasks",
-                "preventTransitions": false
-            },
-            "customScriptUrl": "/WebResources/oss_/D365BoardView/js/exampleExternalScript.js"
-        }
-    ],
-    "required": [
-        "primaryEntity"
-    ],
-    "properties": {
-        "primaryEntity": {
-            "$id": "#/properties/primaryEntity",
+    "definitions": {
+        "boardEntity": {
+            "$id": "#boardEntity",
             "type": "object",
             "title": "The primaryEntity schema",
-            "description": "This configures settings regarding the primary entity in a PowerKanban board. It is always needed",
+            "description": "This configures settings regarding the an entity in a PowerKanban board.",
             "default": {},
             "examples": [
                 {
@@ -151,7 +124,9 @@ Below JSON schema describes the structure of the configuration:
                     "notificationLookup": "oss_incidentid",
                     "transitionCallback": "boardViewExtender.onStateTransition",
                     "defaultView": "All Cases",
-                    "preventTransitions": false
+                    "preventTransitions": false,
+                    "fitLanesToScreenWidth": false,
+                    "hideCountOnLane": false
                 }
             ],
             "required": [
@@ -160,7 +135,7 @@ Below JSON schema describes the structure of the configuration:
             ],
             "properties": {
                 "logicalName": {
-                    "$id": "#/properties/primaryEntity/properties/logicalName",
+                    "$id": "#/definitions/boardEntity/properties/logicalName",
                     "type": "string",
                     "title": "logicalName",
                     "description": "This is the logical name of this entity. Needs to be set.",
@@ -170,7 +145,7 @@ Below JSON schema describes the structure of the configuration:
                     ]
                 },
                 "swimLaneSource": {
-                    "$id": "#/properties/primaryEntity/properties/swimLaneSource",
+                    "$id": "#/definitions/boardEntity/properties/swimLaneSource",
                     "type": "string",
                     "title": "swimLaneSource",
                     "description": "This defines which field to use for splitting data up into lanes. Always needed.",
@@ -180,7 +155,7 @@ Below JSON schema describes the structure of the configuration:
                     ]
                 },
                 "subscriptionLookup": {
-                    "$id": "#/properties/primaryEntity/properties/subscriptionLookup",
+                    "$id": "#/definitions/boardEntity/properties/subscriptionLookup",
                     "type": "string",
                     "title": "subscriptionLookup",
                     "description": "When using the subscription and notification feature, you need to create a new lookup on the subscription entity which points to the entity for which you want to subscribe for notifications. Pass the name of the lookup you created in here. If left out, subscription and notification controls will be unavailable",
@@ -190,7 +165,7 @@ Below JSON schema describes the structure of the configuration:
                     ]
                 },
                 "notificationLookup": {
-                    "$id": "#/properties/primaryEntity/properties/notificationLookup",
+                    "$id": "#/definitions/boardEntity/properties/notificationLookup",
                     "type": "string",
                     "title": "notificationLookup",
                     "description": "When using the subscription and notification feature, you need to create a new lookup on the notification entity which points to the entity for which you want to receive notifications. Pass the name of the lookup you created in here. If left out, subscription and notification controls will be unavailable",
@@ -200,7 +175,7 @@ Below JSON schema describes the structure of the configuration:
                     ]
                 },
                 "transitionCallback": {
-                    "$id": "#/properties/primaryEntity/properties/transitionCallback",
+                    "$id": "#/definitions/boardEntity/properties/transitionCallback",
                     "type": "string",
                     "title": "transitionCallback",
                     "description": "You can provide a custom function which runs on status transition of a record. You need to pass the function name, which may contain namespaces as well. If not passed, default behaviours will apply.",
@@ -210,7 +185,7 @@ Below JSON schema describes the structure of the configuration:
                     ]
                 },
                 "defaultView": {
-                    "$id": "#/properties/primaryEntity/properties/defaultView",
+                    "$id": "#/definitions/boardEntity/properties/defaultView",
                     "type": "string",
                     "title": "defaultView",
                     "description": "Provide a default view which will be selected initially. You can either pass the view name or the ID (without curly brackets). Case is ignored in all scenarios.",
@@ -221,10 +196,30 @@ Below JSON schema describes the structure of the configuration:
                     ]
                 },
                 "preventTransitions": {
-                    "$id": "#/properties/primaryEntity/properties/preventTransitions",
+                    "$id": "#/definitions/boardEntity/properties/preventTransitions",
                     "type": "boolean",
                     "title": "preventTransitions",
                     "description": "This defines whether drag and drop will be prevented. If not defined, it will default to false and no drag and drop will be possible",
+                    "default": false,
+                    "examples": [
+                        true
+                    ]
+                },
+                "fitLanesToScreenWidth": {
+                    "$id": "#/definitions/boardEntity/properties/fitLanesToScreenWidth",
+                    "type": "boolean",
+                    "title": "fitLanesToScreenWidth",
+                    "description": "Setting this to true enables dynamic lane widths, which try to fit all lanes into the page without horizontal scrolling. If not defined, it will default to false.",
+                    "default": false,
+                    "examples": [
+                        true
+                    ]
+                },
+                "hideCountOnLane": {
+                    "$id": "#/definitions/boardEntity/properties/hideCountOnLane",
+                    "type": "boolean",
+                    "title": "hideCountOnLane",
+                    "description": "Setting this to true hides the record counts in the lane headers. Defaults to false",
                     "default": false,
                     "examples": [
                         true
@@ -233,114 +228,80 @@ Below JSON schema describes the structure of the configuration:
             },
             "additionalProperties": true
         },
-        "secondaryEntity": {
-            "$id": "#/properties/secondaryEntity",
-            "type": "object",
-            "title": "secondaryEntity",
-            "description": "Configure a secondary entity in here, which can be displayed in separate swim lanes per primary record when switching to the advanced view.",
-            "default": {},
-            "examples": [
-                {
-                    "logicalName": "task",
-                    "parentLookup": "regardingobjectid",
-                    "swimLaneSource": "statuscode",
-                    "subscriptionLookup": "oss_taskid",
-                    "notificationLookup": "oss_taskid",
-                    "transitionCallback": "boardViewExtender.onSecondaryStateTransition",
-                    "defaultView": "All Tasks",
-                    "preventTransitions": false
+        "secondaryBoardEntity": {
+            "allOf": [
+                { "$ref": "#/definitions/boardEntity" },
+                { 
+                    "$id": "#secondaryBoardEntity",
+                    "examples": [
+                        {
+                            "logicalName": "task",
+                            "parentLookup": "regardingobjectid",
+                            "swimLaneSource": "statuscode",
+                            "subscriptionLookup": "oss_taskid",
+                            "notificationLookup": "oss_taskid",
+                            "transitionCallback": "boardViewExtender.onSecondaryStateTransition",
+                            "defaultView": "All Tasks",
+                            "preventTransitions": false,
+                            "fitLanesToScreenWidth": false,
+                            "hideCountOnLane": false
+                        }
+                    ],
+                    "required": [
+                        "logicalName",
+                        "parentLookup",
+                        "swimLaneSource"
+                    ],
+                    "properties": {
+                        "parentLookup": {
+                            "$id": "#/definitions/secondaryBoardEntity/properties/parentLookup",
+                            "type": "string",
+                            "title": "parentLookup",
+                            "description": "Name of the lookup over which secondary entity is connected to primary entity. Used for displaying secondary records with their matching primary record. Always needed.",
+                            "default": "",
+                            "examples": [
+                                "regardingobjectid"
+                            ]
+                        }
+                    }
                 }
-            ],
-            "required": [
-                "logicalName",
-                "parentLookup",
-                "swimLaneSource"
-            ],
-            "properties": {
-                "logicalName": {
-                    "$id": "#/properties/secondaryEntity/properties/logicalName",
-                    "type": "string",
-                    "title": "logicalName",
-                    "description": "This is the logical name of this entity. Needs to be set.",
-                    "default": "",
-                    "examples": [
-                        "task"
-                    ]
-                },
-                "parentLookup": {
-                    "$id": "#/properties/secondaryEntity/properties/parentLookup",
-                    "type": "string",
-                    "title": "parentLookup",
-                    "description": "Name of the lookup over which secondary entity is connected to primary entity. Used for displaying secondary records with their matching primary record. Always needed.",
-                    "default": "",
-                    "examples": [
-                        "regardingobjectid"
-                    ]
-                },
-                "swimLaneSource": {
-                    "$id": "#/properties/secondaryEntity/properties/swimLaneSource",
-                    "type": "string",
-                    "title": "swimLaneSource",
-                    "description": "This defines which field to use for splitting data up into lanes. Always needed.",
-                    "default": "",
-                    "examples": [
-                        "statuscode"
-                    ]
-                },
-                "subscriptionLookup": {
-                    "$id": "#/properties/secondaryEntity/properties/subscriptionLookup",
-                    "type": "string",
-                    "title": "subscriptionLookup",
-                    "description": "When using the subscription and notification feature, you need to create a new lookup on the notification entity which points to the entity for which you want to receive notifications. Pass the name of the lookup you created in here. If left out, subscription and notification controls will be unavailable",
-                    "default": "",
-                    "examples": [
-                        "oss_taskid"
-                    ]
-                },
-                "notificationLookup": {
-                    "$id": "#/properties/secondaryEntity/properties/notificationLookup",
-                    "type": "string",
-                    "title": "notificationLookup",
-                    "description": "When using the subscription and notification feature, you need to create a new lookup on the notification entity which points to the entity for which you want to receive notifications. Pass the name of the lookup you created in here. If left out, subscription and notification controls will be unavailable",
-                    "default": "",
-                    "examples": [
-                        "oss_taskid"
-                    ]
-                },
-                "transitionCallback": {
-                    "$id": "#/properties/secondaryEntity/properties/transitionCallback",
-                    "type": "string",
-                    "title": "transitionCallback",
-                    "description": "You can provide a custom function which runs on status transition of a record. You need to pass the function name, which may contain namespaces as well. If not passed, default behaviours will apply.",
-                    "default": "",
-                    "examples": [
-                        "boardViewExtender.onSecondaryStateTransition"
-                    ]
-                },
-                "defaultView": {
-                    "$id": "#/properties/secondaryEntity/properties/defaultView",
-                    "type": "string",
-                    "title": "defaultView",
-                    "description": "Provide a default view which will be selected initially. You can either pass the view name or the ID (without curly brackets). Case is ignored in all scenarios.",
-                    "default": "First fetched view",
-                    "examples": [
-                        "All Tasks",
-                        "2B5F5A5D-2D23-4FE7-AA58-E77995368AE7"
-                    ]
-                },
-                "preventTransitions": {
-                    "$id": "#/properties/secondaryEntity/properties/preventTransitions",
-                    "type": "boolean",
-                    "title": "preventTransitions",
-                    "description": "This defines whether drag and drop will be prevented. If not defined, it will default to false and no drag and drop will be possible",
-                    "default": false,
-                    "examples": [
-                        true
-                    ]
-                }
+            ]
+        }
+    },
+    "examples": [
+        {
+            "primaryEntity": {
+                "logicalName": "incident",
+                "swimLaneSource": "statuscode",
+                "subscriptionLookup": "oss_incidentid",
+                "notificationLookup": "oss_incidentid",
+                "transitionCallback": "boardViewExtender.onStateTransition",
+                "defaultView": "All Cases",
+                "preventTransitions": false,
+                "fitLanesToScreenWidth": false,
+                "hideCountOnLane": false
             },
-            "additionalProperties": true
-        },
+            "secondaryEntity": {
+                "logicalName": "task",
+                "parentLookup": "regardingobjectid",
+                "swimLaneSource": "statuscode",
+                "subscriptionLookup": "oss_taskid",
+                "notificationLookup": "oss_taskid",
+                "transitionCallback": "boardViewExtender.onSecondaryStateTransition",
+                "defaultView": "All Tasks",
+                "preventTransitions": false,
+                "fitLanesToScreenWidth": false,
+                "hideCountOnLane": false
+            },
+            "customScriptUrl": "/WebResources/oss_/D365BoardView/js/exampleExternalScript.js"
+        }
+    ],
+    "required": [
+        "primaryEntity"
+    ],
+    "properties": {
+        "primaryEntity": { "$ref": "#/definitions/boardEntity" },
+        "secondaryEntity": { "$ref": "#/definitions/secondaryBoardEntity" },
         "customScriptUrl": {
             "$id": "#/properties/customScriptUrl",
             "type": "string",
@@ -355,6 +316,7 @@ Below JSON schema describes the structure of the configuration:
     "additionalProperties": true
 }
 ```
+> Hint: You can compare your config json to this schema on a validator such as https://www.jsonschemavalidator.net/
 
 # Create automatic notifications on events
 You need to configure the Xrm.Oss.PowerKanban.CreateNotification plugin with new plugin steps registered to the entity events that interest you.
