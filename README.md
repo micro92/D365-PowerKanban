@@ -20,7 +20,6 @@ Features so far:
 
 Todos:
 - Virtualization and Performance Tweaking
-- Plugins for automatically creating notifications for subscribed users are already done, need to change namespace
 
 # Impressions
 ## Simple View (Primary Entity only)
