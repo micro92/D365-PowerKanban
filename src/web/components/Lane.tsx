@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Col, Card, Badge } from "react-bootstrap";
+import { Card, ICardTokens, ICardSectionStyles, ICardSectionTokens } from '@uifabric/react-cards';
 import { Tile } from "./Tile";
 import { BoardLane } from "../domain/BoardLane";
 import { Metadata, Attribute } from "../domain/Metadata";
@@ -75,16 +75,16 @@ const LaneRender = (props: LaneProps) => {
 
     return (
         <div ref={drop} style={{ ...style, minWidth: !props.config.fitLanesToScreenWidth ? (props.minWidth ?? "400px") : (props.lane.data.length ? "auto" : "10px"), marginTop: "5px", marginBottom: "5px", marginLeft: "2.5px", marginRight: "2.5px", flex: "1" }}>
-            <Card style={{borderColor: "#d8d8d8", height: "100%", borderTopColor: borderColor, borderTopWidth: "3px", color: "#333333"}}>
-                <Card.Header style={{ padding: "0.75rem" }}>
-                  <Card.Title title={props.lane.option.Label.UserLocalizedLabel.Label} style={{ marginBottom: "0px", cursor: "default", color: "#045999", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>{props.lane.option.Label.UserLocalizedLabel.Label} { !props.config.hideCountOnLane && <a style={{position: "absolute", right: "5px"}}><Badge variant="primary">{props.lane.data.length}</Badge></a> }</Card.Title>
-                </Card.Header>
-                <Card.Body style={{overflow: "auto"}}>
+            <Card tokens={{ childrenGap: "5px" }} styles={{ root: { maxWidth: "auto", minWidth: "auto", backgroundColor: "#fff", borderColor: "#d8d8d8", height: "100%", borderTopStyle: "solid", borderTopColor: borderColor, borderTopWidth: "3px", color: "#333333" }}}>
+                <Card.Section styles={{ root: { padding: "5px", borderBottom: "1px solid rgba(0,0,0,.125)" }}}>
+                  <h5 title={props.lane.option.Label.UserLocalizedLabel.Label} style={{ fontSize: "17.5px", fontWeight: "normal", cursor: "default", color: "#045999", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>{props.lane.option.Label.UserLocalizedLabel.Label} { !props.config.hideCountOnLane && <a>({props.lane.data.length})</a> }</h5>
+                </Card.Section>
+                <Card.Section styles={ { root: { overflow: "auto", padding: "0.5rem" } } }>
                     {
                       props.cardForm &&
                       props.lane.data.map(mapDataToTile)
                     }
-                </Card.Body>
+                </Card.Section>
             </Card>
         </div>
     );

@@ -156,7 +156,7 @@ export const fetchData = async (entityName: string, fetchXml: string, swimLaneSo
           undefinedLane.data.push(record);
         }
         else {
-          all.push({ option: { Value: null, Color: "#777", Label: { UserLocalizedLabel: { Label: "None" } } } as any, data: [ record ] });
+          all = [({ option: { Value: null, Color: "#777", Label: { UserLocalizedLabel: { Label: "None" } } } as any, data: [ record ] }), ...all];
         }
 
         return all;
@@ -241,7 +241,7 @@ export const fetchNotifications = async (config: BoardViewConfig): Promise<{[key
 };
 
 export const refresh = async (appDispatch: AppStateDispatch, appState: AppStateProps, configState: ConfigStateProps, actionDispatch: ActionDispatch, actionState: ActionStateProps, fetchXml?: string, selectedForm?: CardForm, secondaryFetchXml?: string, secondarySelectedForm?: CardForm) => {
-  actionDispatch({ type: "setProgressText", payload: "Fetching data" });
+  actionDispatch({ type: "setWorkIndicator", payload: true });
 
   try {
     const data = await fetchData(configState.config.primaryEntity.logicalName,
@@ -279,13 +279,12 @@ export const refresh = async (appDispatch: AppStateDispatch, appState: AppStateP
       appDispatch({ type: "setSecondaryData", payload: secondaryData });
     }
 
-    actionDispatch({ type: "setProgressText", payload: "Fetching notifications" });
     const notifications = await fetchNotifications(configState.config);
     appDispatch({ type: "setNotifications", payload: notifications });
   }
   catch (e) {
-    Xrm.Utility.alertDialog(e?.message ?? e, () => {});
+    Xrm.Utility.alertDialog(e?.message ?? e, () => {  });
   }
 
-  actionDispatch({ type: "setProgressText", payload: undefined });
+  actionDispatch({ type: "setWorkIndicator", payload: false });
 };

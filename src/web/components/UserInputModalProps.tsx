@@ -1,5 +1,7 @@
 import * as React from "react";
-import { Modal, Button } from "react-bootstrap";
+import { Modal } from "@fluentui/react/lib/Modal";
+import { PrimaryButton, DefaultButton } from "@fluentui/react/lib/Button";
+import { Dialog, DialogType, DialogFooter } from "@fluentui/react/lib/Dialog";
 
 interface UserInputModalProps {
   title: string;
@@ -45,20 +47,30 @@ export class UserInputModal extends React.PureComponent<UserInputModalProps, und
   }
 
   render() {
+    const modelProps = {
+      isBlocking: true
+    };
+    
+    const dialogContentProps = {
+      type: DialogType.normal,
+      title: this.props.title
+    };
+
     return (
-        <Modal show={this.props.show}>
-          <Modal.Header>
-            <Modal.Title>{ this.props.title }</Modal.Title>
-          </Modal.Header>
+        <Dialog
+          hidden={!this.props.show}
+          dialogContentProps={dialogContentProps}
+          modalProps={modelProps}
+          onDismiss={() => this.triggerCallback(false)}
+        >
 
-          <Modal.Body>
-            {this.props.children}
-          </Modal.Body>
-
-          <Modal.Footer>
-            <Button onClick={ () => this.triggerCallback(true) } disabled={this.props.okButtonDisabled} variant="primary">Ok</Button>
-            <Button onClick={ () => this.triggerCallback(false) } variant="secondary">Cancel</Button>
-          </Modal.Footer>
-        </Modal>);
+          { this.props.show && this.props.children }
+          
+          <DialogFooter>
+            <PrimaryButton onClick={ () => this.triggerCallback(true) } disabled={this.props.okButtonDisabled}>Ok</PrimaryButton>
+            <DefaultButton onClick={ () => this.triggerCallback(false) }>Cancel</DefaultButton>
+          </DialogFooter>
+        </Dialog>
+      );
   }
 }

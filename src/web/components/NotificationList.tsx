@@ -1,7 +1,5 @@
 import * as React from "react";
 import { useAppContext } from "../domain/AppState";
-import { Button, Card } from "react-bootstrap";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { fetchData, refresh, fetchNotifications } from "../domain/fetchData";
 import { NotificationTile } from "./NotificationTile";
@@ -9,6 +7,9 @@ import * as WebApiClient from "xrm-webapi-client";
 import { FieldRow } from "./FieldRow";
 import { useActionContext } from "../domain/ActionState";
 import { useConfigState } from "../domain/ConfigState";
+
+import { Card, ICardTokens, ICardSectionStyles, ICardSectionTokens } from '@uifabric/react-cards';
+import { PrimaryButton, IconButton } from "@fluentui/react/lib/Button";
 
 interface NotificationListProps {
 }
@@ -58,13 +59,13 @@ export const NotificationList = (props: NotificationListProps) => {
 
   return (
       <div style={{ position: "relative", width: "100%", height: "100%" }}>
-        <Button title="Close" onClick={closeSideBySide} style={{ position: "absolute", zIndex: 1, top: "calc(50% - 40px)", left: "-18px" }}><FontAwesomeIcon icon="window-close" /></Button>
-        <Button title="Mark as read and close" onClick={clearAndRefresh} style={{ position: "absolute", zIndex: 1, top: "50%", left: "-18px" }}><FontAwesomeIcon icon="eye-slash" /></Button>
-        <Button title="Open in new window" onClick={openInNewTab} style={{ position: "absolute", zIndex: 1, top: "calc(50% + 40px)", left: "-18px" }}><FontAwesomeIcon icon="window-maximize" /></Button>
+        <IconButton title="Close" iconProps={{iconName: "ChromeClose"}} onClick={closeSideBySide} style={{ position: "absolute", zIndex: 1, top: "calc(50% - 40px)", left: "-18px" }}></IconButton>
+        <IconButton title="Mark as read and close" iconProps={{iconName: "Hide3"}}  onClick={clearAndRefresh} style={{ position: "absolute", zIndex: 1, top: "50%", left: "-18px" }}></IconButton>
+        <IconButton title="Open in new window" iconProps={{iconName: "OpenInNewWindow"}}  onClick={openInNewTab} style={{ position: "absolute", zIndex: 1, top: "calc(50% + 40px)", left: "-18px" }}></IconButton>
         { eventRecord &&
           <Card style={{ margin: "5px", borderColor: "#d8d8d8", borderLeftWidth: "3px" }}>
-            <Card.Title style={{margin: "5px"}}>Current Data</Card.Title>
-            <Card.Body>
+            <Card.Section styles={{ root: { margin: "5px" }}}>Current Data</Card.Section>
+            <Card.Section>
               <div style={{display: "flex", overflow: "auto", flexDirection: "column" }}>
                 {
                   columns.filter(c => ["createdby", "modifiedon", "modifiedby", "modifiedonbehalfby", eventMeta.PrimaryIdAttribute].every(s => s !== c)).map(c =>
@@ -74,7 +75,7 @@ export const NotificationList = (props: NotificationListProps) => {
                   )
                 }
                 </div>
-            </Card.Body>
+            </Card.Section>
           </Card>
         }
         { notifications.map(n => <NotificationTile key={n.oss_notificationid} parent={notificationRecord} data={n}></NotificationTile>) }

@@ -1,9 +1,10 @@
 import * as React from "react";
-import { Col, Card, Button } from "react-bootstrap";
+import { Link } from "@fluentui/react/lib/Link";
 import { CardCell } from "../domain/CardForm";
 import { Metadata } from "../domain/Metadata";
 import { RegexEscape } from "../domain/RegexEscape";
 import * as htmlToText from "html-to-text";
+import { Text } from "@fluentui/react/lib/Text";
 
 interface FieldRowProps {
     cells: Array<CardCell>;
@@ -28,16 +29,20 @@ const FieldRowRender = (props: FieldRowProps) => {
 
         const plainText = toPlainText(text.toString());
 
+        const style: React.CSSProperties = props.type === "body"
+            ? { wordBreak: "break-word", whiteSpace: "pre-wrap" }
+            : { overflow: "hidden", textOverflow: "ellipsis" };
+
         if(!props.searchString) {
-            return <span style={{ wordBreak: "break-word", whiteSpace: "pre-wrap" }}>{ plainText }</span>;
+            return <Text style={style}>{ plainText }</Text>;
         }
 
         const substrings = plainText.split(new RegExp(`(${RegexEscape(props.searchString)})`, "gi"));
-        return (<span style={{ wordBreak: "break-word", whiteSpace: "pre-wrap" }}>
+        return (<Text style={style}>
             {
-                substrings.map((s, i) => (<span key={i} style={s.toLowerCase() === props.searchString.toLowerCase() ? { backgroundColor: "yellow" } : {}}>{s}</span>))
+                substrings.map((s, i) => (<Text key={i} style={s.toLowerCase() === props.searchString.toLowerCase() ? { backgroundColor: "yellow", ...style } : style}>{s}</Text>))
             }
-        </span>);
+        </Text>);
     };
 
     const getData = (fieldName: string): React.ReactNode => {
@@ -51,7 +56,7 @@ const FieldRowRender = (props: FieldRowProps) => {
 
         if (lookupFormatted) {
             const targetEntity = props.data[`_${fieldName}_value@Microsoft.Dynamics.CRM.lookuplogicalname`];
-            return (<Button style={{padding: "0px"}} id={`${targetEntity}.${props.data[`_${fieldName}_value`]}`} onClick={openRecord} variant="link">{highlightSearch(lookupFormatted)}</Button>);
+            return (<Link id={`${targetEntity}.${props.data[`_${fieldName}_value`]}`} onClick={openRecord}>{highlightSearch(lookupFormatted)}</Link>);
         }
 
         return highlightSearch(props.data[fieldName]);
@@ -70,12 +75,20 @@ const FieldRowRender = (props: FieldRowProps) => {
 
     if (props.type === "footer") {
         return (
-            <div style={{ display: "flex", flexDirection: "column" }}>
+            <table style={{ width: "100%" }}>
                 { rows.map(([c, data], i) => {
-                    return (<div key={`cell_${props.data[props.metadata.PrimaryIdAttribute]}_${c.field}`}>{ data }<span style={{float: "right", color: "#666666"}}>{props.metadata.Attributes?.find(a => a.LogicalName === c.field).DisplayName.UserLocalizedLabel.Label}</span></div>);
+                    return (
+                        <tr key={`cell_${props.data[props.metadata.PrimaryIdAttribute]}_${c.field}`}>
+                            <td>
+                                { data }
+                            </td>
+                            <td style={{textAlign: "right"}}>
+                                <Text style={{color: "#666666"}}>{props.metadata.Attributes?.find(a => a.LogicalName === c.field).DisplayName.UserLocalizedLabel.Label}</Text>
+                            </td>
+                        </tr>);
                  })
                 }
-            </div>
+            </table>
         );
     }
 

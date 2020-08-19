@@ -1,16 +1,17 @@
 import * as React from "react";
 import { useAppContext, useAppDispatch, AppStateProps, AppStateDispatch } from "../domain/AppState";
-import { Card, Table, Row, Col, DropdownButton, Dropdown, Button, ButtonGroup, Image, Badge } from "react-bootstrap";
+import { PrimaryButton, IconButton } from "@fluentui/react/lib/Button";
 import { FieldRow } from "./FieldRow";
 import { Metadata, Option } from "../domain/Metadata";
 import { CardForm } from "../domain/CardForm";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { refresh, fetchSubscriptions, fetchNotifications } from "../domain/fetchData";
 import * as WebApiClient from "xrm-webapi-client";
 import { Notification } from "../domain/Notification";
 import { useConfigState } from "../domain/ConfigState";
 import { useActionContext } from "../domain/ActionState";
+
+import { Card, ICardTokens, ICardSectionStyles, ICardSectionTokens } from '@uifabric/react-cards';
 
 interface NotificationTileProps {
     data: Notification;
@@ -46,14 +47,14 @@ const NotificationTileRender = (props: NotificationTileProps) => {
 
     return (
         <Card style={{ margin: "5px", borderColor: "#d8d8d8", borderLeftWidth: "3px", ...props.style }}>
-            <Card.Header>
+            <Card.Section>
                 <div style={{display: "flex", overflow: "auto", flexDirection: "column", color: "#666666", marginRight: "65px" }}>
                     { configState.notificationForm.parsed.header.rows.map((r, i) => <div key={`headerRow_${props.data[metadata.PrimaryIdAttribute]}_${i}`} style={{ margin: "5px", flex: "1" }}><FieldRow type="header" metadata={metadata} data={props.data} cells={r.cells} /></div>) }
                 </div>
-                <Button title="Mark as read" onClick={clearNotification} style={{float: "right", position: "absolute", top: "5px", right: "5px"}}><FontAwesomeIcon icon="eye-slash" /></Button>
-                { props.data.oss_event !== 863910000 && <Button title="Open in new window" onClick={openInNewTab} style={{float: "right", position: "absolute", top: "5px", right: "40px"}} ><FontAwesomeIcon icon="window-maximize" /></Button> }
-            </Card.Header>
-            <Card.Body>
+                <IconButton iconProps={{iconName: "Hide3"}} title="Mark as read" onClick={clearNotification} style={{float: "right", position: "absolute", top: "5px", right: "5px"}}></IconButton>
+                { props.data.oss_event !== 863910000 && <IconButton iconProps={{iconName: "OpenInNewWindow"}} title="Open in new window" onClick={openInNewTab} style={{float: "right", position: "absolute", top: "5px", right: "40px"}}></IconButton> }
+            </Card.Section>
+            <Card.Section>
                 { props.data.oss_event === 863910000 &&
                     <div style={{display: "flex", overflow: "auto", flexDirection: "column" }}>
                         <div style={{ minWidth: "200px", margin: "5px", flex: "1" }}><strong>Updated Fields</strong></div>
@@ -63,12 +64,12 @@ const NotificationTileRender = (props: NotificationTileProps) => {
                 <div style={{display: "flex", overflow: "auto", flexDirection: "column" }}>
                     { configState.notificationForm.parsed.body.rows.map((r, i) => <div key={`bodyRow_${props.data[metadata.PrimaryIdAttribute]}_${i}`} style={{ minWidth: "200px", margin: "5px", flex: "1" }}><FieldRow type="body" metadata={metadata} data={props.data} cells={r.cells} /></div>) }
                 </div>
-            </Card.Body>
-            <Card.Footer style={{ backgroundColor: "#efefef" }}>
+            </Card.Section>
+            <Card.Section styles={{ root: { backgroundColor: "#efefef" }}}>
                 <div style={{display: "flex", overflow: "auto", flexDirection: "column" }}>
                     { configState.notificationForm.parsed.footer.rows.map((r, i) => <div key={`footerRow_${props.data[metadata.PrimaryIdAttribute]}_${i}`} style={{ minWidth: "200px", margin: "5px", flex: "1" }}><FieldRow type="footer" metadata={metadata} data={props.data} cells={r.cells} /></div>) }
                 </div>
-            </Card.Footer>
+            </Card.Section>
         </Card>
     );
 };

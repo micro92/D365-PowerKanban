@@ -1,10 +1,11 @@
 import * as React from "react";
 import { useAppContext } from "../domain/AppState";
-import { Button, Form } from "react-bootstrap";
 
 import { fetchData, refresh } from "../domain/fetchData";
 import { UserInputModal } from "./UserInputModalProps";
 import { useActionContext } from "../domain/ActionState";
+import { FlyOutField } from "../domain/FlyOutForm";
+import { TextField } from "@fluentui/react/lib/TextField";
 
 interface ExternalFormProps {
 }
@@ -37,19 +38,13 @@ export const ExternalForm = (props: ExternalFormProps) => {
         setFormData({...formData, [id]: value });
     };
 
+    const formField = (fieldId: string, field: FlyOutField) => (
+        <TextField key={fieldId} id={fieldId} description={field.subtext} required={field.required} multiline={field.rows && field.rows > 1} rows={field.rows ?? 1} type={field.type} label={field.label} placeholder={field.placeholder} onChange={onFieldChange} />
+    );
+
     return (
         <UserInputModal okButtonDisabled={!Object.keys(actionState.flyOutForm.fields).every(fieldId => !actionState.flyOutForm.fields[fieldId].required || !!formData[fieldId])} noCallBack={noCallBack} yesCallBack={yesCallBack} finally={hideDialog} title={actionState.flyOutForm?.title} show={!!actionState.flyOutForm}>
-            {Object.keys(actionState.flyOutForm.fields).map(fieldId =>
-                <Form.Group key={fieldId} controlId={fieldId}>
-                    <Form.Label>{actionState.flyOutForm.fields[fieldId].label}{actionState.flyOutForm.fields[fieldId].required && <span style={{color: "red"}}>*</span>}</Form.Label>
-                    <Form.Control value={formData[fieldId]} onChange={onFieldChange} as={actionState.flyOutForm.fields[fieldId].as} rows={actionState.flyOutForm.fields[fieldId].rows} type={actionState.flyOutForm.fields[fieldId].type} placeholder={actionState.flyOutForm.fields[fieldId].placeholder ?? `Enter ${[actionState.flyOutForm.fields[fieldId].label]}`} />
-                    { actionState.flyOutForm.fields[fieldId].subtext &&
-                        <Form.Text className="text-muted">
-                            { actionState.flyOutForm.fields[fieldId].subtext }
-                        </Form.Text>
-                    }
-                </Form.Group>
-            )}
+            {Object.keys(actionState.flyOutForm.fields).map(fieldId => formField(fieldId, actionState.flyOutForm.fields[fieldId]))}
         </UserInputModal>
     );
 };

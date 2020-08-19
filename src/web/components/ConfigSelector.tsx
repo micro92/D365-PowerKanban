@@ -1,6 +1,5 @@
 import * as React from "react";
 import { useAppContext } from "../domain/AppState";
-import { Button, Form } from "react-bootstrap";
 
 import { fetchData, refresh } from "../domain/fetchData";
 import { UserInputModal } from "./UserInputModalProps";
@@ -8,6 +7,7 @@ import { useActionContext } from "../domain/ActionState";
 import { useConfigContext } from "../domain/ConfigState";
 import * as WebApiClient from "xrm-webapi-client";
 import { formatGuid } from "../domain/GuidFormatter";
+import { Dropdown, IDropdownOption } from "@fluentui/react/lib/Dropdown";
 
 interface ConfigSelectorProps {
     show: boolean;
@@ -53,18 +53,20 @@ export const ConfigSelector = (props: ConfigSelectorProps) => {
         setMakeDefault(e.target.value);
     };
 
+    const setConfig = (event: React.FormEvent<HTMLDivElement>, item: IDropdownOption) => {
+        setConfigId(item.key);
+    };
+
     return (
         <UserInputModal okButtonDisabled={!configId} noCallBack={() => {}} yesCallBack={yesCallBack} finally={hideDialog} title={"Choose Board"} show={props.show}>
-            <Form.Group controlId="configSelector">
-                <Form.Label>Select a board to load</Form.Label>
-                <Form.Control as="select" onChange={onSelection}>
-                    <option value=""></option>
-                    { configs.map(c => <option key={c.oss_powerkanbanconfigid} value={c.oss_powerkanbanconfigid}>{c.oss_uniquename}</option>) }
-                </Form.Control>
-            </Form.Group>
-            <Form.Group controlId="setDefaultCheckbox">
-                <Form.Check checked={makeDefault} onChange={onMakeDefault} type="checkbox" label="Make this my default board" />
-            </Form.Group>
+            <Dropdown
+              id="configSelector"
+              label={configs.find(c => c.oss_powerkanbanconfigid === configId)?.oss_uniquename}
+              // eslint-disable-next-line react/jsx-no-bind
+              onChange={setConfig}
+              placeholder="Select config"
+              options={ configs.map(c => ({ key: c.oss_powerkanbanconfigid, text: c.oss_uniquename })) }
+            />
         </UserInputModal>
     );
 };

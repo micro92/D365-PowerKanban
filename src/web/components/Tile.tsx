@@ -1,6 +1,5 @@
 import * as React from "react";
 import { useAppContext, useAppDispatch, AppStateProps, AppStateDispatch } from "../domain/AppState";
-import { Card, Table, Row, Col, DropdownButton, Dropdown, Button, ButtonGroup, Image, Badge } from "react-bootstrap";
 import { FieldRow } from "./FieldRow";
 import { Metadata, Option, Attribute } from "../domain/Metadata";
 import { CardForm } from "../domain/CardForm";
@@ -16,7 +15,10 @@ import { BoardViewConfig, PrimaryEntity, BoardEntity } from "../domain/BoardView
 import { Subscription } from "../domain/Subscription";
 import { useConfigState } from "../domain/ConfigState";
 import { useActionContext, DisplayType, useActionDispatch } from "../domain/ActionState";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { DefaultButton } from "@fluentui/react/lib/Button";
+
+import { Card, ICardTokens, ICardSectionStyles, ICardSectionTokens, ICardStyles } from '@uifabric/react-cards';
+import { PrimaryButton, IconButton } from "@fluentui/react/lib/Button";
 
 interface TileProps {
     borderColor: string;
@@ -33,7 +35,7 @@ interface TileProps {
     secondarySubscriptions?: {[key: string]: Array<Subscription>};
     selectedSecondaryForm?: CardForm;
     separatorMetadata: Attribute;
-    style?: React.CSSProperties;
+    style?: ICardStyles;
     subscriptions: Array<Subscription>;
     refresh: () => Promise<void>;
     preventDrag?: boolean;
@@ -143,8 +145,12 @@ const TileRender = (props: TileProps) => {
         Xrm.Navigation.openForm({ entityName: props.metadata.LogicalName, entityId: props.data[props.metadata?.PrimaryIdAttribute], openInNewWindow: true });
     };
 
-    const openInModal = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-        e.stopPropagation();
+    const openInline = () => {
+        Xrm.Navigation.openForm({ entityName: props.metadata.LogicalName, entityId: props.data[props.metadata?.PrimaryIdAttribute], openInNewWindow: false });
+    };
+
+    const openInModal = (ev?: React.MouseEvent<HTMLElement, MouseEvent> | React.KeyboardEvent<HTMLElement>) => {
+        ev.stopPropagation();
 
         const input : Xrm.Navigation.PageInputEntityRecord = {
 			pageType: "entityrecord",
@@ -238,51 +244,99 @@ const TileRender = (props: TileProps) => {
 
     console.log(`${props.metadata.LogicalName} tile ${props.data[props.metadata.PrimaryIdAttribute]} is rerendering`);
 
+    const menuProps = {
+        items: [
+            {
+                key: 'openInSplitScreen',
+                text: 'Open In Splitscreen',
+                iconProps: { iconName: 'ClosePane' },
+                onClick: setSelectedRecord
+            },
+            {
+                key: 'openInNewWindow',
+                text: 'Open In New Window',
+                iconProps: { iconName: 'OpenInNewWindow' },
+                onClick: openInNewTab
+            },
+            {
+                key: 'openInModal',
+                text: 'Open In Modal',
+                iconProps: { iconName: 'Picture' },
+                onClick: openInModal
+            },
+            (secondaryConfig && secondaryMetadata
+                ? {
+                key: "createNewSecondary",
+                text: `Create new ${secondaryMetadata.DisplayName.UserLocalizedLabel.Label}`,
+                iconProps: { iconName: 'Add'},
+                onClick: createNewSecondary
+                }
+                : null
+            ),
+            ...(props.config.customButtons && props.config.customButtons.length ? props.config.customButtons.map(c => ({key: c.id, text: c.label, iconProps: { iconName: c.icon.value }, onClick: initCallBack(c.callBack)})) : [])
+        ],
+    };
+
+    const subscriptionMenuProps = {
+        items: [
+            {
+                key: 'subscribe',
+                text: 'Subscribe',
+                iconProps: { iconName: 'Ringer' },
+                onClick: subscribe
+            },
+            {
+                key: 'unsubscribe',
+                text: 'Unsubscribe',
+                iconProps: { iconName: 'RingerRemove' },
+                onClick: unsubscribe
+            },
+            {
+                key: 'markAsRead',
+                text: 'Mark as read',
+                iconProps: { iconName: 'Hide3' },
+                onClick: clearNotifications
+            },
+            {
+                key: 'showNotifications',
+                text: 'Show Notifications',
+                iconProps: { iconName: 'View' },
+                onClick: showNotifications
+            }
+        ]
+    };
+
     return (
         <div ref={ props.preventDrag ? stub : drag}>
-            <Card onDoubleClick={openInModal} style={{opacity, marginBottom: "5px", borderColor: "#d8d8d8", borderLeftColor: props.borderColor, borderLeftWidth: "3px", ...props.style}}>
-                <Card.Header style={{ padding: "10px" }}>
+            <Card tokens={{ childrenGap: "5px" }} onDoubleClick={openInline} styles={{ root: { maxWidth: "auto", backgroundColor: "#fff", opacity, borderStyle: "solid", borderWidth: "1px", borderColor: "#d8d8d8", borderLeftColor: props.borderColor, borderLeftWidth: "3px", ...props.style}}}>
+                <Card.Section styles={{root: { padding: "10px", borderBottom: "1px solid rgba(0,0,0,.125)" }}}>
                     <div style={{display: "flex", flexDirection: "row"}}>
                         <div style={{display: "flex", flex: "1", overflow: "auto", flexDirection: "column", color: "#666666" }}>
                             { props.cardForm.parsed.header.rows.map((r, i) => <div key={`headerRow_${props.data[props.metadata.PrimaryIdAttribute]}_${i}`} style={{ flex: "1" }}><FieldRow searchString={props.searchText} type="header" metadata={props.metadata} data={props.data} cells={r.cells} /></div>) }
                         </div>
-                        { props.config.notificationLookup && props.config.subscriptionLookup && <Dropdown as={ButtonGroup} style={{ display: "initial", margintop: "5px", marginRight: "5px" }}>
-                            <Button onClick={showNotifications} variant="outline-secondary">
-                                {
-                                <span>{isSubscribed ? <FontAwesomeIcon icon="bell" /> : <FontAwesomeIcon icon="bell-slash" /> } { props.notifications?.length > 0 && <Badge variant="danger">{props.notifications.length}</Badge> }</span>
-                                }
-                            </Button>
-                            <Dropdown.Toggle split variant="outline-secondary" id="dropdown-split-basic" />
-                            <Dropdown.Menu>
-                                <Dropdown.Item as="button" onClick={subscribe}><FontAwesomeIcon icon="bell" /> Subscribe</Dropdown.Item>
-                                <Dropdown.Item as="button" onClick={unsubscribe}><FontAwesomeIcon icon="bell-slash" /> Unsubscribe</Dropdown.Item>
-                                <Dropdown.Item as="button" onClick={clearNotifications}><FontAwesomeIcon icon="eye-slash" /> Mark as read</Dropdown.Item>
-                                <Dropdown.Item as="button" onClick={showNotifications}><FontAwesomeIcon icon="eye" /> Show notifications</Dropdown.Item>
-                            </Dropdown.Menu>
-                        </Dropdown>}
-                        <DropdownButton id="displaySelector" variant="outline-secondary" title="" style={{ margintop: "5px" }}>
-                            <Dropdown.Item onClick={setSelectedRecord} as="button" id="setSelected"><FontAwesomeIcon icon="angle-double-right" /> Open in split screen</Dropdown.Item>
-                            <Dropdown.Item onClick={openInNewTab} as="button" id="setSelected"><FontAwesomeIcon icon="external-link-alt" /> Open in new window</Dropdown.Item>
-                            <Dropdown.Item onClick={openInModal} as="button" id="openModal"><FontAwesomeIcon icon="window-maximize" /> Open in modal</Dropdown.Item>
-                            { secondaryConfig && <Dropdown.Item onClick={createNewSecondary} as="button" id="addSecondary"><FontAwesomeIcon icon="plus" /> Create new {secondaryMetadata.DisplayName.UserLocalizedLabel.Label}</Dropdown.Item> }
-                            {
-                                props.config.customButtons && props.config.customButtons.length &&
-                                <>
-                                    <Dropdown.Divider></Dropdown.Divider>
-                                    { props.config.customButtons.map(b => <Dropdown.Item key={b.id} id={b.id} as="button" onClick={initCallBack(b.callBack)}>
-                                        <>
-                                            {b.icon && b.icon.type === "url" && <img src={b.icon.value}></img>}
-                                            {" "}{b.label}
-                                        </>
-                                    </Dropdown.Item>) }
-                                </>
-                            }
-                        </DropdownButton>
+                        { props.config.notificationLookup && props.config.subscriptionLookup && 
+                            <>
+                                <IconButton
+                                    id="notificationButton"
+                                    iconProps={{ iconName: isSubscribed ? ( props.notifications && props.notifications.length ? 'RingerSolid' : 'Ringer') : 'RingerOff', color: props.notifications && props.notifications.length ? "red" : "inherit" }}
+                                    split
+                                    aria-roledescription="split button"
+                                    menuProps={subscriptionMenuProps}
+                                />
+                            </>
+                        }
+                        <IconButton
+                            id="moreButton"
+                            iconProps={{ iconName: 'More' }}
+                            split
+                            aria-roledescription="split button"
+                            menuProps={({ items: menuProps.items.filter(m => !!m) })}
+                        />
                     </div>
-                </Card.Header>
-                <Card.Body style={{ padding: "10px" }}>
+                </Card.Section>
+                <Card.Section styles={{ root: { padding: "10px" }}}>
                     <div style={{display: "flex", overflow: "auto", flexDirection: "column" }}>
-                        { props.cardForm.parsed.body.rows.map((r, i) => <div key={`bodyRow_${props.data[props.metadata.PrimaryIdAttribute]}_${i}`} style={{ minWidth: "200px", margin: "5px", flex: "1" }}><FieldRow searchString={props.searchText} type="body" metadata={props.metadata} data={props.data} cells={r.cells} /></div>) }
+                        { props.cardForm.parsed.body.rows.map((r, i) => <div key={`bodyRow_${props.data[props.metadata.PrimaryIdAttribute]}_${i}`} style={{ flex: "1" }}><FieldRow searchString={props.searchText} type="body" metadata={props.metadata} data={props.data} cells={r.cells} /></div>) }
                     </div>
                     { props.secondaryData &&
                     <div>
@@ -290,7 +344,7 @@ const TileRender = (props: TileProps) => {
                         <span style={{marginLeft: "5px", fontSize: "larger"}}>
                             {secondaryMetadata.DisplayCollectionName.UserLocalizedLabel.Label}
                         </span>
-                        <Button style={{marginLeft: "5px"}} variant="outline-secondary" onClick={createNewSecondary}><FontAwesomeIcon icon="plus-square" /></Button>
+                        <IconButton iconProps={{iconName: "Add"}} style={{marginLeft: "5px"}} onClick={createNewSecondary}></IconButton>
                         <div id="flexContainer" style={{ display: "flex", flexDirection: "row", overflow: "auto" }}>
                             {
                                 props.secondaryData.map(d => <Lane
@@ -311,12 +365,12 @@ const TileRender = (props: TileProps) => {
                         </div>
                     </div>
                     }
-                </Card.Body>
-                <Card.Footer style={{ backgroundColor: "#efefef", padding: "10px" }}>
+                </Card.Section>
+                <Card.Section styles={{ root: { backgroundColor: "#efefef", padding: "10px", borderTop: "1px solid rgba(0,0,0,.125)" }}}>
                     <div style={{display: "flex", overflow: "auto", flexDirection: "column" }}>
-                        { props.cardForm.parsed.footer.rows.map((r, i) => <div key={`footerRow_${props.data[props.metadata.PrimaryIdAttribute]}_${i}`} style={{ minWidth: "200px", margin: "5px", flex: "1" }}><FieldRow searchString={props.searchText} type="footer" metadata={props.metadata} data={props.data} cells={r.cells} /></div>) }
+                        { props.cardForm.parsed.footer.rows.map((r, i) => <div key={`footerRow_${props.data[props.metadata.PrimaryIdAttribute]}_${i}`} style={{ flex: "1" }}><FieldRow searchString={props.searchText} type="footer" metadata={props.metadata} data={props.data} cells={r.cells} /></div>) }
                     </div>
-                </Card.Footer>
+                </Card.Section>
             </Card>
         </div>
     );

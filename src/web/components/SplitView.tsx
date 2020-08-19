@@ -1,5 +1,6 @@
 import * as React from "react";
-import { Modal, ProgressBar } from "react-bootstrap";
+import { Modal } from "@fluentui/react/lib/Modal";
+import { ProgressIndicator } from "@fluentui/react/lib/ProgressIndicator";
 import { Board } from "./Board";
 import { SideBySideForm } from "./SideBySideForm";
 import { NotificationList } from "./NotificationList";
@@ -24,18 +25,12 @@ export const SplitView = (props: SplitViewProps) => {
     }, [props.primaryDataIds]);
 
     return (<>
-        <Modal onHide={() => {}} show={!!actionState.progressText} size="lg">
-            <Modal.Header>
-                <Modal.Title>Loading...</Modal.Title>
-            </Modal.Header>
-
-            <Modal.Body>
-                <div>
-                    <div style={{textAlign: "center", width: "100%", fontSize: "large"}}>{actionState.progressText}</div>
-                    <br />
-                    <ProgressBar animated now={100} />
-                </div>
-            </Modal.Body>
+        <Modal isOpen={!!actionState.progressText}>
+            <div style={{padding: "10px"}}>
+                <div style={{textAlign: "center", width: "100%", fontSize: "large"}}>{actionState.progressText}</div>
+                <br />
+                <ProgressIndicator />
+            </div>
         </Modal>
         { actionState.flyOutForm && <ExternalForm /> }
         <ConfigSelector show={actionState.configSelectorDisplayState || !configState.configId} />

@@ -1,5 +1,4 @@
 import * as React from "react";
-import { Navbar, Nav, Button, Card, Col, Row, DropdownButton, Dropdown, FormControl, Badge, InputGroup, Spinner } from "react-bootstrap";
 import * as WebApiClient from "xrm-webapi-client";
 import { BoardViewConfig } from "../domain/BoardViewConfig";
 import { UserInputModal } from "./UserInputModalProps";
@@ -14,8 +13,13 @@ import { Tile } from "./Tile";
 import { DndContainer } from "./DndContainer";
 import { loadExternalScript } from "../domain/LoadExternalScript";
 import { useConfigContext } from "../domain/ConfigState";
-import { useActionContext } from "../domain/ActionState";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useActionContext, DisplayType } from "../domain/ActionState";
+import { SearchBox } from "@fluentui/react/lib/SearchBox";
+import { Spinner } from "@fluentui/react/lib/Spinner";
+import { PrimaryButton, CommandBarButton, IButtonStyles, IconButton } from "@fluentui/react/lib/Button";
+import { Dropdown, IDropdownOption } from "@fluentui/react/lib/Dropdown";
+import { OverflowSet, IOverflowSetItemProps } from "@fluentui/react/lib/OverflowSet";
+import { ICardStyles } from '@uifabric/react-cards';
 
 const determineAttributeUrl = (attribute: Attribute) => {
   if (attribute.AttributeType === "Picklist") {
@@ -71,7 +75,6 @@ export const Board = () => {
   const [ showDeletionVerification, setShowDeletionVerification ] = React.useState(false);
   const [ stateFilters, setStateFilters ] = React.useState<Array<Option>>([]);
   const [ displayState, setDisplayState ] = React.useState<DisplayState>("simple" as any);
-  const [ searchText, setSearch] = React.useState("");
   const [ appliedSearchText, setAppliedSearch ] = React.useState(undefined);
   const [ preventExternalRefresh, setPreventExternalRefresh ] = React.useState(true);
 
@@ -234,40 +237,51 @@ export const Board = () => {
 
   };
 
-  const setView = (event: any) => {
-    const viewId = event.target.id;
+  const setView = (event: React.FormEvent<HTMLDivElement>, item: IDropdownOption) => {
+    const viewId = item.key;
     const view = views.find(v => v.savedqueryid === viewId);
 
     actionDispatch({ type: "setSelectedView", payload: view });
     refresh(appDispatch, appState, configState, actionDispatch, actionState, view.fetchxml);
   };
 
-  const setForm = (event: any) => {
-    const formId = event.target.id;
+  const setForm = (event: React.FormEvent<HTMLDivElement>, item: IDropdownOption) => {
+    const formId = item.key;
     const form = cardForms.find(f => f.formid === formId);
 
     actionDispatch({ type: "setSelectedForm", payload: form });
     refresh(appDispatch, appState, configState, actionDispatch, actionState, undefined, form);
   };
 
-  const setSecondaryView = (event: any) => {
-    const viewId = event.target.id;
+  const setDisplayType = (event: React.FormEvent<HTMLDivElement>, item: IDropdownOption) => {
+    const displayType = item.key;
+    
+    if (displayType === "simple") {
+      setSimpleDisplay();
+    }
+    else {
+      setSecondaryDisplay();
+    }
+  };
+
+  const setSecondaryView = (event: React.FormEvent<HTMLDivElement>, item: IDropdownOption) => {
+    const viewId = item.key;
     const view = secondaryViews.find(v => v.savedqueryid === viewId);
 
     actionDispatch({ type: "setSelectedSecondaryView", payload: view });
     refresh(appDispatch, appState, configState, actionDispatch, actionState, undefined, undefined, view.fetchxml, undefined);
   };
 
-  const setSecondaryForm = (event: any) => {
-    const formId = event.target.id;
+  const setSecondaryForm = (event: React.FormEvent<HTMLDivElement>, item: IDropdownOption) => {
+    const formId = item.key;
     const form = secondaryCardForms.find(f => f.formid === formId);
 
     actionDispatch({ type: "setSelectedSecondaryForm", payload: form });
     refresh(appDispatch, appState, configState, actionDispatch, actionState, undefined, undefined, undefined, form);
   };
 
-  const setStateFilter = (event: any) => {
-    const stateValue = event.target.id;
+  const setStateFilter = (event: React.FormEvent<HTMLDivElement>, item: IDropdownOption) => {
+    const stateValue = item.key;
 
     if (stateFilters.some(f => f.Value == stateValue)) {
       setStateFilters(stateFilters.filter(f => f.Value != stateValue));
@@ -285,18 +299,12 @@ export const Board = () => {
     setDisplayState("advanced");
   };
 
-  const setSearchText = (e: any) => {
-    setSearch(e.target.value ?? "");
-  };
-
-  const search = () => {
+  const onSearch = (searchText?: string) => {
     setAppliedSearch(searchText || undefined);
   };
 
-  const onSearchKey = (e: any) => {
-    if (e.key === "Enter") {
-      search();
-    }
+  const onEmptySearch = () => {
+    setAppliedSearch(undefined);
   };
 
   const refreshBoard = async () => {
@@ -317,7 +325,7 @@ export const Board = () => {
     actionDispatch({ type: "setConfigSelectorDisplayState", payload: true });
   };
 
-  const advancedTileStyle = React.useMemo(() => ({ margin: "5px" }), []);
+  const advancedTileStyle = React.useMemo(() => ({ margin: "5px" as React.ReactText } as ICardStyles), []);
 
   const advancedData = React.useMemo(() => {
     return displayState === "advanced" && appState.boardData &&
@@ -374,77 +382,150 @@ export const Board = () => {
       lane={{...d, data: d.data.filter(r => displayState === "simple" || appState.secondaryData && appState.secondaryData.every(t => t.data.every(tt => tt[`_${configState.config.secondaryEntity.parentLookup}_value`] !== r[configState.metadata.PrimaryIdAttribute])))}} />);
   }, [displayState, appState.boardData, appState.subscriptions, stateFilters, appState.secondaryData, appliedSearchText, appState.notifications, configState.configId]);
 
+  const onRenderItem = (item: IOverflowSetItemProps): JSX.Element => {
+    if (item.onRender) {
+      return item.onRender(item);
+    }
+    return (
+      <CommandBarButton
+        role="menuitem"
+        iconProps={{ iconName: item.icon }}
+        menuProps={item.subMenuProps}
+        text={item.name}
+      />
+    );
+  };
+
+  const navItemStyles: IButtonStyles = {
+    root: {
+      margin: "5px",
+    },
+  };
+
+  const navItems: Array<IOverflowSetItemProps> = [
+    {
+      key: 'configSelector',
+      onRender: () => <IconButton iconProps={{ iconName: "Waffle" }} styles={navItemStyles} onClick={openConfigSelector}></IconButton>
+    },
+    {
+      key: 'viewSelector',
+      onRender: () => <Dropdown
+        styles={navItemStyles}
+        id="viewSelector"
+        onChange={setView}
+        placeholder="Select view"
+        selectedKey={actionState.selectedView?.savedqueryid}
+        options={ views?.map(v => ({ key: v.savedqueryid, text: v.name})) }
+      />,
+    },
+    {
+      key: 'formSelector',
+      onRender: () => <Dropdown
+        styles={navItemStyles}
+        id="formSelector"
+        onChange={setForm}
+        placeholder="Select form"
+        selectedKey={actionState.selectedForm?.formid}
+        options={ cardForms?.map(f => ({ key: f.formid, text: f.name})) }
+      />
+    },
+    (!configState.config || !configState.config.secondaryEntity
+    ? null
+    : {
+      key: 'displaySelector',
+      onRender: () => <Dropdown
+        styles={navItemStyles}
+        id="displaySelector"
+        onChange={setDisplayType}
+        selectedKey={displayState}
+        options={ [ { key: "simple", text: "Simple"}, { key: "advanced", text: "Advanced"} ] }
+      />
+      }
+    ),
+    (displayState !== "advanced"
+    ? null
+    : {
+      key: 'statusFilter',
+      onRender: () => <Dropdown
+        styles={navItemStyles}
+        id="secondaryViewSelector"
+        onChange={setSecondaryView}
+        placeholder="Select view"
+        selectedKey={actionState.selectedSecondaryView?.savedqueryid}
+        options={secondaryViews?.map(v => ({ key: v.savedqueryid, text: v.name}))}
+      />
+      }
+    ),
+    (displayState !== "advanced"
+    ? null
+    : {
+      key: 'statusFilter',
+      onRender: () => <Dropdown
+        styles={navItemStyles}
+        id="secondaryFormSelector"
+        onChange={setSecondaryForm}
+        placeholder="Select form"
+        selectedKey={actionState.selectedSecondaryForm?.formid}
+        options={ secondaryCardForms?.map(f => ({ key: f.formid, text: f.name})) }
+      />
+      }
+    ),
+    (configState.config?.primaryEntity.swimLaneSource !== "statuscode"
+    ? null
+    : {
+      key: 'statusFilter',
+      onRender: () => <Dropdown
+        styles={navItemStyles}
+        id="stateFilterSelector"
+        onChange={setStateFilter}
+        placeholder="All states"
+        options={ configState.stateMetadata?.OptionSet.Options?.map(o => ({ key: o.Value, text: o.Label.UserLocalizedLabel.Label })) }
+      />
+      }
+    ),
+    {
+      key: 'searchBox',
+      onRender: () => <SearchBox styles={navItemStyles} placeholder="Search..." onClear={onEmptySearch} onSearch={onSearch} />
+    },
+    {
+      key: 'workIndicator',
+      onRender: () => !!actionState.workIndicator && <Spinner styles={{root: { marginLeft: "auto" }}} label="Working..." ariaLive="assertive" labelPosition="right" />
+    }
+  ];
+
+  const onRenderOverflowButton = (overflowItems: any[] | undefined): JSX.Element => {
+    const buttonStyles: Partial<IButtonStyles> = {
+      root: {
+        minWidth: 0,
+        padding: '0 4px',
+        alignSelf: 'stretch',
+        height: 'auto',
+      },
+    };
+    
+    return (
+      <CommandBarButton
+        ariaLabel="More items"
+        role="menuitem"
+        styles={buttonStyles}
+        menuIconProps={{ iconName: 'More' }}
+        menuProps={{ items: overflowItems! }}
+      />
+    );
+  };
+
   return (
     <div style={{height: "100%", display: "flex", flexDirection: "column" }}>
       <UserInputModal title="Verify Deletion" yesCallBack={deleteRecord} finally={hideDeletionVerification} show={showDeletionVerification}>
         <div>Are you sure you want to delete  '{actionState.selectedRecord && actionState.selectedRecord.name}' (ID: {actionState.selectedRecord && actionState.selectedRecord.id})?</div>
       </UserInputModal>
-      <Navbar bg="light" variant="light">
-        <Navbar.Collapse id="basic-navbar-nav" className="justify-content-between">
-          <Nav className="pull-left">
-            <Button title="Config Selector" onClick={openConfigSelector} variant="outline-primary"><FontAwesomeIcon icon="th" /></Button>
-            <DropdownButton style={{marginLeft: "5px"}} variant="outline-primary" id="viewSelector" title={<>{actionState.selectedView?.name} <Badge variant="primary">{appState?.boardData?.reduce((count, l) => count + l.data.length, 0)}</Badge></> ?? "Select view"}>
-              { views?.map(v => <Dropdown.Item onClick={setView} as="button" id={v.savedqueryid} key={v.savedqueryid}>{v.name}</Dropdown.Item>) }
-            </DropdownButton>
-            <DropdownButton variant="outline-primary" id="formSelector" title={actionState.selectedForm?.name ?? "Select form"} style={{marginLeft: "5px"}}>
-              { cardForms?.map(f => <Dropdown.Item onClick={setForm} as="button" id={f.formid} key={f.formid}>{f.name}</Dropdown.Item>) }
-            </DropdownButton>
-            { configState.config && configState.config.secondaryEntity &&
-              <DropdownButton variant="outline-primary" id="displaySelector" title={displayState === "simple" ? "Simple" : "Advanced"} style={{marginLeft: "5px"}}>
-                <Dropdown.Item onClick={setSimpleDisplay} as="button" id="display_simple">Simple</Dropdown.Item>
-                <Dropdown.Item onClick={setSecondaryDisplay} as="button" id="display_secondarys">Advanced</Dropdown.Item>
-              </DropdownButton>
-            }
-            { displayState === "advanced" &&
-              <>
-                <DropdownButton variant="outline-primary" id="secondaryViewSelector" title={actionState.selectedSecondaryView?.name ?? "Select view"} style={{marginLeft: "5px"}}>
-                  { secondaryViews?.map(v => <Dropdown.Item onClick={setSecondaryView} as="button" id={v.savedqueryid} key={v.savedqueryid}>{v.name}</Dropdown.Item>) }
-                </DropdownButton>
-                <DropdownButton variant="outline-primary" id="secondaryFormSelector" title={actionState.selectedSecondaryForm?.name ?? "Select form"} style={{marginLeft: "5px"}}>
-                  { secondaryCardForms?.map(f => <Dropdown.Item onClick={setSecondaryForm} as="button" id={f.formid} key={f.formid}>{f.name}</Dropdown.Item>) }
-                </DropdownButton>
-              </>
-            }
-            { configState.config?.primaryEntity.swimLaneSource === "statuscode" &&
-              <DropdownButton variant="outline-primary" id="formSelector" title={stateFilters.length ? stateFilters.map(f => f.Label.UserLocalizedLabel.Label).join("|") : "All states"} style={{marginLeft: "5px"}}>
-                { configState.stateMetadata?.OptionSet.Options.map(o => <Dropdown.Item onClick={setStateFilter} as="button" id={o.Value} key={o.Value}>{o.Label.UserLocalizedLabel.Label}</Dropdown.Item>) }
-              </DropdownButton>
-            }
-            <InputGroup style={{marginLeft: "5px"}}>
-              <FormControl
-                value={searchText}
-                onChange={setSearchText}
-                onKeyPress={onSearchKey}
-                placeholder="Filter records"
-              />
-              <InputGroup.Append style={{ zIndex: 0 }}>
-                <Button variant="outline-secondary" onClick={search}><FontAwesomeIcon icon="search" /></Button>
-              </InputGroup.Append>
-            </InputGroup>
-          </Nav>
-          <Nav className="pull-right">
-            <Button title="Work Indicator" disabled={!actionState.workIndicator} variant="outline-primary">
-              { !!actionState.workIndicator &&
-                <>
-                  <Spinner animation="grow" size="sm" role="status">
-                    <span className="sr-only">Loading...</span>
-                  </Spinner>
-                  <span className="sr-only">Loading...</span>
-                </>
-              }
-              { !actionState.workIndicator &&
-                <>
-                  <FontAwesomeIcon icon="circle" />
-                  <span className="sr-only">Idle</span>
-                </>
-              }
-            </Button>
-            <Button variant="outline-primary" style={{marginLeft: "5px"}} onClick={refreshBoard}>
-              <FontAwesomeIcon icon="sync" />
-            </Button>
-          </Nav>
-        </Navbar.Collapse>
-      </Navbar>
+      <OverflowSet
+        role="menubar"
+        styles={{root: {backgroundColor: "#f8f9fa"}}}
+        onRenderItem={onRenderItem}
+        onRenderOverflowButton={onRenderOverflowButton}
+        items={navItems.filter(i => !!i)}
+      />
       <DndContainer>
         { displayState === "advanced" &&
           <div id="advancedContainer" style={{ display: "flex", flexDirection: "column", overflow: "auto" }}>
