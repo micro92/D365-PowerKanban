@@ -37,10 +37,6 @@ export const NotificationList = (props: NotificationListProps) => {
     actionDispatch({ type: "setSelectedRecord", payload: undefined });
   };
 
-  const openInNewTab = () => {
-    Xrm.Navigation.openForm({ entityName: actionState.selectedRecord.entityType, entityId: actionState.selectedRecord.id, openInNewWindow: true });
-  };
-
   const clearAndRefresh = async () => {
     actionDispatch({ type: "setWorkIndicator", payload: true });
 
@@ -55,30 +51,40 @@ export const NotificationList = (props: NotificationListProps) => {
     appDispatch({ type: "setNotifications", payload: newNotifications });
     actionDispatch({ type: "setWorkIndicator", payload: false });
     closeSideBySide();
-};
+  };
+
+  const openInNewTab = () => {
+    Xrm.Navigation.openForm({ entityName: eventRecord.LogicalName, entityId: eventRecord.Id, openInNewWindow: true });
+  };
 
   return (
       <div style={{ position: "relative", width: "100%", height: "100%" }}>
-        <IconButton title="Close" iconProps={{iconName: "ChromeClose"}} onClick={closeSideBySide} style={{ position: "absolute", zIndex: 1, top: "calc(50% - 40px)", left: "-18px" }}></IconButton>
-        <IconButton title="Mark as read and close" iconProps={{iconName: "Hide3"}}  onClick={clearAndRefresh} style={{ position: "absolute", zIndex: 1, top: "50%", left: "-18px" }}></IconButton>
-        <IconButton title="Open in new window" iconProps={{iconName: "OpenInNewWindow"}}  onClick={openInNewTab} style={{ position: "absolute", zIndex: 1, top: "calc(50% + 40px)", left: "-18px" }}></IconButton>
+        <IconButton title="Close" iconProps={{iconName: "ChromeClose"}} onClick={closeSideBySide} style={{ color: "white", backgroundColor: "#045999", position: "absolute", zIndex: 1, top: "calc(50% - 40px)", left: "-18px" }}></IconButton>
+        <IconButton title="Mark as read and close" iconProps={{iconName: "Hide3"}}  onClick={clearAndRefresh} style={{ color: "white", backgroundColor: "#045999", position: "absolute", zIndex: 1, top: "50%", left: "-18px" }}></IconButton>
+        <IconButton title="Open in new window" iconProps={{iconName: "OpenInNewWindow"}}  onClick={openInNewTab} style={{ color: "white", backgroundColor: "#045999", position: "absolute", zIndex: 1, top: "calc(50% + 40px)", left: "-18px" }}></IconButton>
         { eventRecord &&
-          <Card style={{ margin: "5px", borderColor: "#d8d8d8", borderLeftWidth: "3px" }}>
-            <Card.Section styles={{ root: { margin: "5px" }}}>Current Data</Card.Section>
-            <Card.Section>
-              <div style={{display: "flex", overflow: "auto", flexDirection: "column" }}>
-                {
-                  columns.filter(c => ["createdby", "modifiedon", "modifiedby", "modifiedonbehalfby", eventMeta.PrimaryIdAttribute].every(s => s !== c)).map(c =>
-                    <div key={`currentRecord_${c}`} style={{ minWidth: "200px", margin: "5px", flex: "1" }}>
-                      <FieldRow type="footer" metadata={eventMeta} data={eventRecord} cells={[ { field: c } ]} />
-                    </div>
-                  )
-                }
-                </div>
-            </Card.Section>
-          </Card>
+          <div>
+            <Card tokens={{childrenGap: "5px"}} styles={{ root: { maxWidth: "auto", minWidth: "auto", margin: "5px", backgroundColor: "#f8f9fa" }}}>
+              <Card.Section styles={{ root: { padding: "5px" }}}>Current Data</Card.Section>
+              <Card.Section styles={{ root: { padding: "5px", borderBottom: "1px solid rgba(0,0,0,.125)" }}}>
+                <div style={{display: "flex", overflow: "auto", flexDirection: "column" }}>
+                  {
+                    columns.filter(c => ["createdby", "modifiedon", "modifiedby", "modifiedonbehalfby", eventMeta.PrimaryIdAttribute].every(s => s !== c)).map(c =>
+                      <div key={`currentRecord_${c}`} style={{ minWidth: "200px", margin: "5px", flex: "1" }}>
+                        <FieldRow type="footer" metadata={eventMeta} data={eventRecord} cells={[ { field: c } ]} />
+                      </div>
+                    )
+                  }
+                  </div>
+              </Card.Section>
+            </Card>
+          </div>
         }
-        { notifications.map(n => <NotificationTile key={n.oss_notificationid} parent={notificationRecord} data={n}></NotificationTile>) }
+        <div style={{overflow: "auto"}}>
+          <Card tokens={{childrenGap: "10px"}} styles={{ root: { maxWidth: "auto", minWidth: "auto", margin: "5px", padding: "10px", backgroundColor: "#f8f9fa" }}}>
+            { notifications.map(n => <NotificationTile key={n.oss_notificationid} parent={notificationRecord} data={n}></NotificationTile>)}
+          </Card>
+        </div>
       </div>
   );
 };

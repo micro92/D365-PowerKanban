@@ -76,18 +76,20 @@ const FieldRowRender = (props: FieldRowProps) => {
     if (props.type === "footer") {
         return (
             <table style={{ width: "100%" }}>
-                { rows.map(([c, data], i) => {
-                    return (
-                        <tr key={`cell_${props.data[props.metadata.PrimaryIdAttribute]}_${c.field}`}>
-                            <td>
-                                { data }
-                            </td>
-                            <td style={{textAlign: "right"}}>
-                                <Text style={{color: "#666666"}}>{props.metadata.Attributes?.find(a => a.LogicalName === c.field).DisplayName.UserLocalizedLabel.Label}</Text>
-                            </td>
-                        </tr>);
-                 })
-                }
+                <tbody>
+                    { rows.map(([c, data], i) => {
+                        return (
+                            <tr key={`cell_${props.data[props.metadata.PrimaryIdAttribute]}_${c.field}`}>
+                                <td>
+                                    { data }
+                                </td>
+                                <td style={{textAlign: "right"}}>
+                                    <Text style={{color: "#666666"}}>{props.metadata.Attributes?.find(a => a.LogicalName === c.field).DisplayName.UserLocalizedLabel.Label}</Text>
+                                </td>
+                            </tr>);
+                    })
+                    }
+                </tbody>
             </table>
         );
     }

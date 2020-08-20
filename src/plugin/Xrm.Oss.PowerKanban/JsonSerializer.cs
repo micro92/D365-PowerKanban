@@ -12,7 +12,7 @@ namespace Xrm.Oss.PowerKanban
     {
         public static string Serialize<T>(T result) where T : class
         {
-            var serializer = new DataContractJsonSerializer(typeof(T));
+            var serializer = new DataContractJsonSerializer(typeof(T), new DataContractJsonSerializerSettings { UseSimpleDictionaryFormat = true });
 
             using (var memoryStream = new MemoryStream())
             {

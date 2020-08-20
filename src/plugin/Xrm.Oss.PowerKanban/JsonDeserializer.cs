@@ -19,7 +19,7 @@ namespace Xrm.Oss.PowerKanban
 
             using (var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(json)))
             {
-                var serializer = new DataContractJsonSerializer(typeof(T));
+                var serializer = new DataContractJsonSerializer(typeof(T), new DataContractJsonSerializerSettings { UseSimpleDictionaryFormat = true });
 
                 var config = serializer.ReadObject(memoryStream);
 

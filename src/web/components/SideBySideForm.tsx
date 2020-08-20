@@ -41,9 +41,9 @@ export const SideBySideForm = (props: FormProps) => {
 
   return (
       <div style={{ position: "relative", width: "100%", height: "100%" }}>
-        <IconButton iconProps={{iconName: "ChromeClose"}} title="Close" onClick={closeSideBySide} style={{ position: "absolute", top: "calc(50% - 40px)", left: "-18px" }}></IconButton>
-        <IconButton iconProps={{iconName: "Refresh"}} title="Close and refresh" onClick={closeAndRefresh} style={{ position: "absolute", top: "50%", left: "-18px" }}></IconButton>
-        <IconButton iconProps={{iconName: "OpenInNewWindow"}} title="Open in new window" onClick={openInNewTab} style={{ position: "absolute", top: "calc(50% + 40px)", left: "-18px" }}></IconButton>
+        <IconButton iconProps={{iconName: "ChromeClose"}} title="Close" onClick={closeSideBySide} style={{ color: "white", backgroundColor: "#045999", position: "absolute", top: "calc(50% - 40px)", left: "-18px" }}></IconButton>
+        <IconButton iconProps={{iconName: "Refresh"}} title="Close and refresh" onClick={closeAndRefresh} style={{ color: "white", backgroundColor: "#045999", position: "absolute", top: "50%", left: "-18px" }}></IconButton>
+        <IconButton iconProps={{iconName: "OpenInNewWindow"}} title="Open in new window" onClick={openInNewTab} style={{ color: "white", backgroundColor: "#045999", position: "absolute", top: "calc(50% + 40px)", left: "-18px" }}></IconButton>
         <iframe onLoad={hideNav} ref={_iframe} style={{width: "100%", height: "100%", border: 0}} src={`/main.aspx?app=${configState.appId}&pagetype=entityrecord&etn=${actionState.selectedRecord.entityType}&id=${actionState.selectedRecord.id}`}></iframe>
       </div>
   );

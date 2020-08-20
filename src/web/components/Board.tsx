@@ -17,7 +17,7 @@ import { useActionContext, DisplayType } from "../domain/ActionState";
 import { SearchBox } from "@fluentui/react/lib/SearchBox";
 import { Spinner } from "@fluentui/react/lib/Spinner";
 import { PrimaryButton, CommandBarButton, IButtonStyles, IconButton } from "@fluentui/react/lib/Button";
-import { Dropdown, IDropdownOption } from "@fluentui/react/lib/Dropdown";
+import { Dropdown, IDropdownOption, IDropdownStyles } from "@fluentui/react/lib/Dropdown";
 import { OverflowSet, IOverflowSetItemProps } from "@fluentui/react/lib/OverflowSet";
 import { ICardStyles } from '@uifabric/react-cards';
 
@@ -382,6 +382,19 @@ export const Board = () => {
       lane={{...d, data: d.data.filter(r => displayState === "simple" || appState.secondaryData && appState.secondaryData.every(t => t.data.every(tt => tt[`_${configState.config.secondaryEntity.parentLookup}_value`] !== r[configState.metadata.PrimaryIdAttribute])))}} />);
   }, [displayState, appState.boardData, appState.subscriptions, stateFilters, appState.secondaryData, appliedSearchText, appState.notifications, configState.configId]);
 
+  const currentNotifications = React.useMemo(() => {
+    if (!configState.config) {
+      return [[], []];
+    }
+
+    var primaryRecordIds = appState.boardData ? appState.boardData.reduce((all, cur) => [...all, ...cur.data], []).map(d => d[configState.metadata.PrimaryIdAttribute]) : [];
+    var secondaryRecordIds = configState.config.secondaryEntity && appState.secondaryData
+      ? appState.secondaryData.reduce((all, cur) => [...all, ...cur.data], []).map(d => d[configState.secondaryMetadata[configState.config.secondaryEntity.logicalName].PrimaryIdAttribute])
+      : [];
+
+    return [ primaryRecordIds.filter(id => appState.notifications && appState.notifications[id] && appState.notifications[id].length), secondaryRecordIds.filter(id => appState.notifications && appState.notifications[id] && appState.notifications[id].length) ];
+  }, [ appState.boardData, appState.secondaryData, appState.notifications ]);
+
   const onRenderItem = (item: IOverflowSetItemProps): JSX.Element => {
     if (item.onRender) {
       return item.onRender(item);
@@ -394,6 +407,13 @@ export const Board = () => {
         text={item.name}
       />
     );
+  };
+
+  const dropdownStyles: Partial<IDropdownStyles> = {
+    root: {
+      margin: "5px",
+    },
+    dropdown: { width: 250 }
   };
 
   const navItemStyles: IButtonStyles = {
@@ -410,7 +430,7 @@ export const Board = () => {
     {
       key: 'viewSelector',
       onRender: () => <Dropdown
-        styles={navItemStyles}
+        styles={dropdownStyles}
         id="viewSelector"
         onChange={setView}
         placeholder="Select view"
@@ -421,7 +441,7 @@ export const Board = () => {
     {
       key: 'formSelector',
       onRender: () => <Dropdown
-        styles={navItemStyles}
+        styles={dropdownStyles}
         id="formSelector"
         onChange={setForm}
         placeholder="Select form"
@@ -434,7 +454,7 @@ export const Board = () => {
     : {
       key: 'displaySelector',
       onRender: () => <Dropdown
-        styles={navItemStyles}
+        styles={dropdownStyles}
         id="displaySelector"
         onChange={setDisplayType}
         selectedKey={displayState}
@@ -442,12 +462,11 @@ export const Board = () => {
       />
       }
     ),
-    (displayState !== "advanced"
-    ? null
-    : {
-      key: 'statusFilter',
+    (displayState === "advanced"
+    ? {
+      key: 'secondaryViewSelector',
       onRender: () => <Dropdown
-        styles={navItemStyles}
+        styles={dropdownStyles}
         id="secondaryViewSelector"
         onChange={setSecondaryView}
         placeholder="Select view"
@@ -455,11 +474,11 @@ export const Board = () => {
         options={secondaryViews?.map(v => ({ key: v.savedqueryid, text: v.name}))}
       />
       }
+    : null
     ),
-    (displayState !== "advanced"
-    ? null
-    : {
-      key: 'statusFilter',
+    (displayState === "advanced"
+    ? {
+      key: 'secondaryFormSelector',
       onRender: () => <Dropdown
         styles={navItemStyles}
         id="secondaryFormSelector"
@@ -469,6 +488,7 @@ export const Board = () => {
         options={ secondaryCardForms?.map(f => ({ key: f.formid, text: f.name})) }
       />
       }
+    : null
     ),
     (configState.config?.primaryEntity.swimLaneSource !== "statuscode"
     ? null
@@ -482,6 +502,13 @@ export const Board = () => {
         options={ configState.stateMetadata?.OptionSet.Options?.map(o => ({ key: o.Value, text: o.Label.UserLocalizedLabel.Label })) }
       />
       }
+    ),
+    ( (configState.config?.primaryEntity.subscriptionLookup && configState.config?.primaryEntity.notificationLookup) || (configState.config?.secondaryEntity && configState.config?.secondaryEntity.subscriptionLookup && configState.config?.secondaryEntity.notificationLookup)
+      ? {
+        key: 'notificationIndicator',
+        onRender: () =>  <IconButton iconProps={{ iconName: "RingerSolid", style: { color: (currentNotifications[0].length || currentNotifications[1].length) ? "red" : "inherit" } }} styles={navItemStyles}  />
+      }
+      : null
     ),
     {
       key: 'searchBox',

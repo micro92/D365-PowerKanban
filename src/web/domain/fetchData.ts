@@ -39,6 +39,7 @@ const prepareFetch = (fetchXml: string, swimLaneSource: string, form: CardForm, 
     // We make sure that the swim lane source is always included without having to update all views
     if (formFields.every(f => f !== swimLaneSource)) {
       formFields.push(swimLaneSource);
+      formFields.push(metadata.PrimaryNameAttribute);
     }
 
     if (options?.additionalFields) {

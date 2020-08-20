@@ -45,22 +45,15 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="key.snk" />
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CreateNotification.cs" />
     <Compile Include="EventData.cs" />
     <Compile Include="JsonDeserializer.cs" />
     <Compile Include="JsonSerializer.cs" />
-    <Compile Include="FluentQuery.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Crm.Sdk.Proxy, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.CrmSdk.CoreAssemblies.9.0.2.22\lib\net462\Microsoft.Crm.Sdk.Proxy.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Xrm.Sdk, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.CrmSdk.CoreAssemblies.9.0.2.22\lib\net462\Microsoft.Xrm.Sdk.dll</HintPath>
-    </Reference>
+    <Reference Include="System" />
     <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.DirectoryServices" />
     <Reference Include="System.DirectoryServices.AccountManagement" />
@@ -72,6 +65,17 @@
     <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CrmSdk.CoreAssemblies">
+      <Version>9.0.2.26</Version>
+    </PackageReference>
+    <PackageReference Include="Xrm.Oss.FluentQuery.Sources">
+      <Version>2.1.2</Version>
+    </PackageReference>
+    <PackageReference Include="Xrm.Oss.TemplatingLanguage.Sources">
+      <Version>3.7.4</Version>
+    </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

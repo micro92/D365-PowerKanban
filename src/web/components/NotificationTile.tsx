@@ -12,6 +12,8 @@ import { useConfigState } from "../domain/ConfigState";
 import { useActionContext } from "../domain/ActionState";
 
 import { Card, ICardTokens, ICardSectionStyles, ICardSectionTokens } from '@uifabric/react-cards';
+import { ActivityItem } from "@fluentui/react/lib/ActivityItem";
+import { Icon } from "@fluentui/react/lib/Icon";
 
 interface NotificationTileProps {
     data: Notification;
@@ -23,10 +25,8 @@ const NotificationTileRender = (props: NotificationTileProps) => {
     const configState = useConfigState();
     const appDispatch = useAppDispatch();
     const [ actionState, actionDispatch ] = useActionContext();
-    const metadata = configState.secondaryMetadata["oss_notification"];
-    const eventRecord = props.data.parsed.eventRecordReference;
 
-    const eventMeta = eventRecord.LogicalName === configState.config.primaryEntity.logicalName ? configState.metadata : configState.secondaryMetadata[eventRecord.LogicalName];
+    const eventRecord = props.data.parsed.eventRecordReference;
 
     const clearNotification = async () => {
         actionDispatch({ type: "setWorkIndicator", payload: true });
@@ -46,31 +46,21 @@ const NotificationTileRender = (props: NotificationTileProps) => {
     };
 
     return (
-        <Card style={{ margin: "5px", borderColor: "#d8d8d8", borderLeftWidth: "3px", ...props.style }}>
-            <Card.Section>
-                <div style={{display: "flex", overflow: "auto", flexDirection: "column", color: "#666666", marginRight: "65px" }}>
-                    { configState.notificationForm.parsed.header.rows.map((r, i) => <div key={`headerRow_${props.data[metadata.PrimaryIdAttribute]}_${i}`} style={{ margin: "5px", flex: "1" }}><FieldRow type="header" metadata={metadata} data={props.data} cells={r.cells} /></div>) }
-                </div>
-                <IconButton iconProps={{iconName: "Hide3"}} title="Mark as read" onClick={clearNotification} style={{float: "right", position: "absolute", top: "5px", right: "5px"}}></IconButton>
-                { props.data.oss_event !== 863910000 && <IconButton iconProps={{iconName: "OpenInNewWindow"}} title="Open in new window" onClick={openInNewTab} style={{float: "right", position: "absolute", top: "5px", right: "40px"}}></IconButton> }
-            </Card.Section>
-            <Card.Section>
-                { props.data.oss_event === 863910000 &&
-                    <div style={{display: "flex", overflow: "auto", flexDirection: "column" }}>
-                        <div style={{ minWidth: "200px", margin: "5px", flex: "1" }}><strong>Updated Fields</strong></div>
-                        { props.data.parsed.updatedFields.filter(f => ["createdby", "modifiedon", "modifiedby", "modifiedonbehalfby", eventMeta.PrimaryIdAttribute].every(s => s !== f)).map(f => <div id={f} style={{ minWidth: "200px", margin: "5px", flex: "1" }} key={props.data[metadata.PrimaryIdAttribute] + f}>{eventMeta.Attributes.find(a => a.LogicalName === f).DisplayName.UserLocalizedLabel.Label}</div>) }
-                    </div>
-                }
-                <div style={{display: "flex", overflow: "auto", flexDirection: "column" }}>
-                    { configState.notificationForm.parsed.body.rows.map((r, i) => <div key={`bodyRow_${props.data[metadata.PrimaryIdAttribute]}_${i}`} style={{ minWidth: "200px", margin: "5px", flex: "1" }}><FieldRow type="body" metadata={metadata} data={props.data} cells={r.cells} /></div>) }
-                </div>
-            </Card.Section>
-            <Card.Section styles={{ root: { backgroundColor: "#efefef" }}}>
-                <div style={{display: "flex", overflow: "auto", flexDirection: "column" }}>
-                    { configState.notificationForm.parsed.footer.rows.map((r, i) => <div key={`footerRow_${props.data[metadata.PrimaryIdAttribute]}_${i}`} style={{ minWidth: "200px", margin: "5px", flex: "1" }}><FieldRow type="footer" metadata={metadata} data={props.data} cells={r.cells} /></div>) }
-                </div>
-            </Card.Section>
-        </Card>
+        <Card.Item>
+            <ActivityItem
+                key={props.data.oss_notificationid}
+                activityIcon={<Icon iconName={'Chat' }/>}
+                timeStamp={props.data["createdon@OData.Community.Display.V1.FormattedValue"]}
+                activityDescription={[
+                    <span key={1}>Event: {props.data["oss_event@OData.Community.Display.V1.FormattedValue"]}</span>,
+                    <IconButton key={2} iconProps={{iconName: "Hide3"}} title="Mark as read" onClick={clearNotification}></IconButton>,
+                    <IconButton key={3} iconProps={{iconName: "OpenInNewWindow"}} title="Open in new window" onClick={openInNewTab}></IconButton>
+                ]}
+                comments={[
+                    <span key={1}>{props.data.oss_text}</span>
+                ]}
+            />
+        </Card.Item>
     );
 };
 

@@ -4,9 +4,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading.Tasks;
 using Xrm.Oss.FluentQuery;
+using Xrm.Oss.XTL.Interpreter;
 
 namespace Xrm.Oss.PowerKanban
 {
@@ -28,6 +30,12 @@ namespace Xrm.Oss.PowerKanban
 
         [DataMember(Name = "capturedFields")]
         public List<string> CapturedFields { get; set; }
+
+        [DataMember(Name = "xtlCondition")]
+        public string XtlCondition { get; set; }
+
+        [DataMember(Name = "messageConfig")]
+        public Dictionary<string, string> MessageConfig { get; set; }
     }
     
     public enum EventType {
@@ -40,11 +48,11 @@ namespace Xrm.Oss.PowerKanban
 
     public class CreateNotification : IPlugin
     {
-        private readonly CreateNotificationConfig config;
+        private readonly Lazy<CreateNotificationConfig> config;
 
         public CreateNotification(string unsecure, string secure)
         {
-            config = JsonDeserializer.Parse<CreateNotificationConfig>(unsecure);
+            config = new Lazy<CreateNotificationConfig>(() => JsonDeserializer.Parse<CreateNotificationConfig>(unsecure));
         }
 
         public Entity GetTarget(IPluginExecutionContext context)
@@ -93,7 +101,26 @@ namespace Xrm.Oss.PowerKanban
 
             return target.Contains(attribute)
                 ? target.GetAttributeValue<T>(attribute)
-                : preImages.Select(p => p.Value.GetAttributeValue<T>(config.ParentLookupName)).FirstOrDefault();
+                : preImages.Select(p => p.Value.GetAttributeValue<T>(config.Value.ParentLookupName)).FirstOrDefault();
+        }
+
+        private bool CheckExecutionCondition(Entity target, IOrganizationService service, ITracingService tracing)
+        {
+            var condition = config.Value.XtlCondition;
+
+            if (string.IsNullOrEmpty(condition))
+            {
+                return true;
+            }
+
+            var result = new XTLInterpreter(condition, target, new OrganizationConfig(), service, tracing).Produce();
+
+            if (!bool.TryParse(result, out var resultBool)) {
+                tracing.Trace("When using the xtlCondition, make sure its result is a boolean");
+                return false;
+            }
+
+            return resultBool;
         }
 
         public void Execute(IServiceProvider serviceProvider)
@@ -111,12 +138,20 @@ namespace Xrm.Oss.PowerKanban
                 return;
             }
 
+            var shouldExecute = CheckExecutionCondition(target, service, crmTracing);
+
+            if (!shouldExecute)
+            {
+                crmTracing.Trace("Execution condition not met, aborting");
+                return;
+            }
+
             var attributes = target != null
                 ? target.Attributes.Keys.ToList()
                 : null;
 
-            var filteredAttributes = config.CapturedFields != null
-                ? attributes.Where(a => config.CapturedFields.Any(f => string.Equals(a, f, StringComparison.InvariantCultureIgnoreCase))).ToList()
+            var filteredAttributes = config.Value.CapturedFields != null
+                ? attributes.Where(a => config.Value.CapturedFields.Any(f => string.Equals(a, f, StringComparison.InvariantCultureIgnoreCase))).ToList()
                 : attributes;
 
             var eventData = new EventData
@@ -125,9 +160,9 @@ namespace Xrm.Oss.PowerKanban
                 EventRecordReference = target?.ToEntityReference() ?? targetRef
             };
 
-            var eventTarget = string.IsNullOrEmpty(config.ParentLookupName) && eventData.EventRecordReference.Id != Guid.Empty
+            var eventTarget = string.IsNullOrEmpty(config.Value.ParentLookupName) && eventData.EventRecordReference.Id != Guid.Empty
                 ? eventData.EventRecordReference
-                : GetValue<EntityReference>(config.ParentLookupName, target, context.PreEntityImages);
+                : GetValue<EntityReference>(config.Value.ParentLookupName, target, context.PreEntityImages);
 
             if (eventTarget == null) {
                 crmTracing.Trace("Failed to find parent, exiting");
@@ -137,7 +172,7 @@ namespace Xrm.Oss.PowerKanban
             var subscriptionsQuery = service.Query("oss_subscription")
                 .Where(e => e
                     .Attribute(a => a
-                        .Named(config.SubscriptionLookupName)
+                        .Named(config.Value.SubscriptionLookupName)
                         .Is(ConditionOperator.Equal)
                         .To(eventTarget.Id)
                     )
@@ -147,9 +182,25 @@ namespace Xrm.Oss.PowerKanban
                         .To(0)
                     )
                 )
-                .IncludeColumns("ownerid");
+                .IncludeColumns("ownerid")
+                .Link(l => l
+                    .FromEntity("oss_subscription")
+                    .ToEntity("systemuser")
+                    .FromAttribute("ownerid")
+                    .ToAttribute("systemuserid")
+                    .With.LinkType(JoinOperator.LeftOuter)
+                    .Link(l2 => l2
+                        .FromEntity("systemuser")
+                        .ToEntity("usersettings")
+                        .FromAttribute("systemuserid")
+                        .ToAttribute("systemuserid")
+                        .With.LinkType(JoinOperator.LeftOuter)
+                        .With.Alias("usersettings")
+                        .IncludeColumns("localeid")
+                    )
+                );
 
-            if (!config.NotifyCurrentUser) {
+            if (!config.Value.NotifyCurrentUser) {
                 subscriptionsQuery.AddCondition(
                     (a => a
                         .Named("ownerid")
@@ -164,15 +215,33 @@ namespace Xrm.Oss.PowerKanban
             var serializedNotification = JsonSerializer.Serialize(eventData);
             var eventType = GetEventType(context);
 
+            var messageConfig = config.Value.MessageConfig ?? new Dictionary<string, string>();
+
+            var messages = subscriptions.Select(s => s.GetAttributeValue<AliasedValue>("usersettings.localeid")?.Value as int?)
+                .Select(locale => locale != null ? locale.Value.ToString() : "default")
+                .Distinct()
+                .ToDictionary(
+                    (k) => k,
+                    (k) => messageConfig.ContainsKey(k)
+                        ? TokenMatcher.ProcessTokens(messageConfig[k], target, new OrganizationConfig(), service, crmTracing)
+                        : (messageConfig.ContainsKey("default") ? TokenMatcher.ProcessTokens(messageConfig["default"], target, new OrganizationConfig(), service, crmTracing) : null)
+                );
+
             subscriptions.ForEach(subscription => {
+                var localeCode = subscription.GetAttributeValue<AliasedValue>("usersettings.localeid")?.Value as int?;
+                var locale = localeCode != null ? localeCode.Value.ToString() : "default";
+
+                var message = messages.ContainsKey(locale) ? messages[locale] : null;
+
                 var notification = new Entity
                 {
                     LogicalName = "oss_notification",
                     Attributes = {
                         ["ownerid"] = subscription.GetAttributeValue<EntityReference>("ownerid"),
                         ["oss_event"] = new OptionSetValue((int) eventType),
-                        [config.NotificationLookupName] = eventTarget,
-                        ["oss_data"] = serializedNotification
+                        [config.Value.NotificationLookupName] = eventTarget,
+                        ["oss_data"] = serializedNotification,
+                        ["oss_text"] = message
                     }
                 };
 

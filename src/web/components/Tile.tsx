@@ -15,10 +15,10 @@ import { BoardViewConfig, PrimaryEntity, BoardEntity } from "../domain/BoardView
 import { Subscription } from "../domain/Subscription";
 import { useConfigState } from "../domain/ConfigState";
 import { useActionContext, DisplayType, useActionDispatch } from "../domain/ActionState";
-import { DefaultButton } from "@fluentui/react/lib/Button";
-
+import { DefaultButton, IButtonStyles } from "@fluentui/react/lib/Button";
 import { Card, ICardTokens, ICardSectionStyles, ICardSectionTokens, ICardStyles } from '@uifabric/react-cards';
 import { PrimaryButton, IconButton } from "@fluentui/react/lib/Button";
+import { Persona, PersonaSize } from "@fluentui/react/lib/Persona";
 
 interface TileProps {
     borderColor: string;
@@ -244,12 +244,29 @@ const TileRender = (props: TileProps) => {
 
     console.log(`${props.metadata.LogicalName} tile ${props.data[props.metadata.PrimaryIdAttribute]} is rerendering`);
 
+    const customSplitButtonStyles: IButtonStyles = {
+        splitButtonMenuButton: { backgroundColor: 'white', width: 28, border: 'none' },
+        splitButtonMenuIcon: { fontSize: '7px' },
+        splitButtonDivider: { backgroundColor: '#c8c8c8', width: 1, right: 26, position: 'absolute', top: 4, bottom: 4 },
+        splitButtonContainer: {
+          selectors: {
+            ["@media screen and (-ms-high-contrast: active)"]: { border: 'none' },
+          },
+        },
+      };
+
     const menuProps = {
         items: [
             {
+                key: 'open',
+                text: 'Open',
+                iconProps: { iconName: 'Forward' },
+                onClick: openInline
+            },
+            {
                 key: 'openInSplitScreen',
                 text: 'Open In Splitscreen',
-                iconProps: { iconName: 'ClosePane' },
+                iconProps: { iconName: 'OpenPaneMirrored' },
                 onClick: setSelectedRecord
             },
             {
@@ -308,30 +325,39 @@ const TileRender = (props: TileProps) => {
 
     return (
         <div ref={ props.preventDrag ? stub : drag}>
-            <Card tokens={{ childrenGap: "5px" }} onDoubleClick={openInline} styles={{ root: { maxWidth: "auto", backgroundColor: "#fff", opacity, borderStyle: "solid", borderWidth: "1px", borderColor: "#d8d8d8", borderLeftColor: props.borderColor, borderLeftWidth: "3px", ...props.style}}}>
+            <Card tokens={{ childrenGap: "5px" }} styles={{ root: { maxWidth: "auto", backgroundColor: "#fff", opacity, borderStyle: "solid", borderWidth: "1px", borderColor: "#d8d8d8", borderLeftColor: props.borderColor, borderLeftWidth: "3px", ...props.style}}}>
                 <Card.Section styles={{root: { padding: "10px", borderBottom: "1px solid rgba(0,0,0,.125)" }}}>
-                    <div style={{display: "flex", flexDirection: "row"}}>
+                    <div style={{display: "flex", flexDirection: "column"}}>
+                        <div style={{display: "flex", flexDirection: "row"}}>
+                            <Persona text={props.data[props.metadata.PrimaryNameAttribute]} hidePersonaDetails={true} size={PersonaSize.size32}></Persona>
+                            <div style={{alignSelf: "flex-end", marginLeft: "auto"}}>
+                                { props.config.notificationLookup && props.config.subscriptionLookup && 
+                                    <>
+                                        <IconButton
+                                            id="notificationButton"
+                                            styles={customSplitButtonStyles}
+                                            iconProps={{ iconName: isSubscribed ? ( props.notifications && props.notifications.length ? 'RingerSolid' : 'Ringer') : 'RingerOff', style: { color: props.notifications && props.notifications.length ? "red" : "inherit" }}}
+                                            split
+                                            aria-roledescription="split button"
+                                            menuProps={subscriptionMenuProps}
+                                            onClick={showNotifications}
+                                        />
+                                    </>
+                                }
+                                <IconButton
+                                    id="moreButton"
+                                    styles={customSplitButtonStyles}
+                                    iconProps={{ iconName: 'Forward' }}
+                                    split
+                                    aria-roledescription="split button"
+                                    menuProps={({ items: menuProps.items.filter(m => !!m) })}
+                                    onClick={openInline}
+                                />
+                            </div>
+                        </div>
                         <div style={{display: "flex", flex: "1", overflow: "auto", flexDirection: "column", color: "#666666" }}>
                             { props.cardForm.parsed.header.rows.map((r, i) => <div key={`headerRow_${props.data[props.metadata.PrimaryIdAttribute]}_${i}`} style={{ flex: "1" }}><FieldRow searchString={props.searchText} type="header" metadata={props.metadata} data={props.data} cells={r.cells} /></div>) }
                         </div>
-                        { props.config.notificationLookup && props.config.subscriptionLookup && 
-                            <>
-                                <IconButton
-                                    id="notificationButton"
-                                    iconProps={{ iconName: isSubscribed ? ( props.notifications && props.notifications.length ? 'RingerSolid' : 'Ringer') : 'RingerOff', color: props.notifications && props.notifications.length ? "red" : "inherit" }}
-                                    split
-                                    aria-roledescription="split button"
-                                    menuProps={subscriptionMenuProps}
-                                />
-                            </>
-                        }
-                        <IconButton
-                            id="moreButton"
-                            iconProps={{ iconName: 'More' }}
-                            split
-                            aria-roledescription="split button"
-                            menuProps={({ items: menuProps.items.filter(m => !!m) })}
-                        />
                     </div>
                 </Card.Section>
                 <Card.Section styles={{ root: { padding: "10px" }}}>
