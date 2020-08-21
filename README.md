@@ -23,19 +23,29 @@ Todos:
 
 # Impressions
 ## Simple View (Primary Entity only)
-![Screenshot_2020-06-23 Accounts My Active Accounts - Microsoft Dynamics 365(3)](https://user-images.githubusercontent.com/4287938/85367979-9cac1a80-b52a-11ea-8f7f-91c3e2a832d8.png)
+![image](https://user-images.githubusercontent.com/4287938/90894070-55be9200-e3c0-11ea-822c-9674fd1cab89.png)
+
 
 ## Advanced View (Primary Entity and Secondary Entity)
-![Screenshot_2020-06-23 Accounts My Active Accounts - Microsoft Dynamics 365](https://user-images.githubusercontent.com/4287938/85366990-adf42780-b528-11ea-8848-bc035b21ae4f.png)
+![image](https://user-images.githubusercontent.com/4287938/90894139-71299d00-e3c0-11ea-9e0b-441187c1d224.png)
+
 
 ## Form View
-![grafik](https://user-images.githubusercontent.com/4287938/88367426-fef77580-cd8b-11ea-9658-e1af8af17d1e.png)
+![image](https://user-images.githubusercontent.com/4287938/90894207-856d9a00-e3c0-11ea-855c-48ea820e57ea.png)
+
 
 ## Custom Dialogs
-![Screenshot_2020-06-23 Accounts My Active Accounts - Microsoft Dynamics 365(1)](https://user-images.githubusercontent.com/4287938/85367031-c2382480-b528-11ea-9864-c0b36f0e6e00.png)
+![image](https://user-images.githubusercontent.com/4287938/90894247-96b6a680-e3c0-11ea-8f52-a5c12b402aa5.png)
+
 
 ## Side By Side View
-![Screenshot_2020-06-23 Accounts My Active Accounts - Microsoft Dynamics 365(2)](https://user-images.githubusercontent.com/4287938/85367151-fdd2ee80-b528-11ea-9765-bd3a80337fcb.png)
+![image](https://user-images.githubusercontent.com/4287938/90894676-468c1400-e3c1-11ea-9089-45ca0cca9f9c.png)
+
+
+## Notification List
+![image](https://user-images.githubusercontent.com/4287938/90894792-6e7b7780-e3c1-11ea-8520-2629a9849732.png)
+
+
 
 # Installation
 - Download and install the [latest managed solution](/../../releases/latest)
