@@ -74,7 +74,7 @@ const LaneRender = (props: LaneProps) => {
     );
 
     return (
-        <div ref={drop} style={{ ...style, minWidth: !props.config.fitLanesToScreenWidth ? (props.minWidth ?? "400px") : (props.lane.data.length ? "auto" : "10px"), marginTop: "5px", marginBottom: "5px", marginLeft: "2.5px", marginRight: "2.5px", flex: "1" }}>
+        <div ref={drop} style={{ ...style, minWidth: !props.config.fitLanesToScreenWidth ? (props.minWidth ?? "400px") : (props.lane.data.length ? "auto" : "20px"), marginTop: "5px", marginBottom: "5px", marginLeft: "2.5px", marginRight: "2.5px", flex: "1" }}>
             <Card tokens={{ childrenGap: "5px" }} styles={{ root: { maxWidth: "auto", minWidth: "auto", backgroundColor: "#fff", borderColor: "#d8d8d8", height: "100%", borderTopStyle: "solid", borderTopColor: borderColor, borderTopWidth: "3px", color: "#333333" }}}>
                 <Card.Section styles={{ root: { padding: "5px", borderBottom: "1px solid rgba(0,0,0,.125)" }}}>
                   <h5 title={props.lane.option.Label.UserLocalizedLabel.Label} style={{ fontSize: "17.5px", fontWeight: "normal", cursor: "default", color: "#045999", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>{props.lane.option.Label.UserLocalizedLabel.Label} { !props.config.hideCountOnLane && <a>({props.lane.data.length})</a> }</h5>

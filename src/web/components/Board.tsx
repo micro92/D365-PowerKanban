@@ -1,7 +1,6 @@
 import * as React from "react";
 import * as WebApiClient from "xrm-webapi-client";
 import { BoardViewConfig } from "../domain/BoardViewConfig";
-import { UserInputModal } from "./UserInputModalProps";
 import { useAppContext } from "../domain/AppState";
 import { formatGuid } from "../domain/GuidFormatter";
 import { Lane } from "./Lane";
@@ -20,6 +19,7 @@ import { PrimaryButton, CommandBarButton, IButtonStyles, IconButton } from "@flu
 import { Dropdown, IDropdownOption, IDropdownStyles } from "@fluentui/react/lib/Dropdown";
 import { OverflowSet, IOverflowSetItemProps } from "@fluentui/react/lib/OverflowSet";
 import { ICardStyles } from '@uifabric/react-cards';
+import { BoardLane } from "../domain/BoardLane";
 
 const determineAttributeUrl = (attribute: Attribute) => {
   if (attribute.AttributeType === "Picklist") {
@@ -72,11 +72,11 @@ export const Board = () => {
   const [ secondaryViews, setSecondaryViews ] = React.useState<Array<SavedQuery>>([]);
   const [ cardForms, setCardForms ] = React.useState<Array<CardForm>>([]);
   const [ secondaryCardForms, setSecondaryCardForms ] = React.useState<Array<CardForm>>([]);
-  const [ showDeletionVerification, setShowDeletionVerification ] = React.useState(false);
   const [ stateFilters, setStateFilters ] = React.useState<Array<Option>>([]);
   const [ displayState, setDisplayState ] = React.useState<DisplayState>("simple" as any);
   const [ appliedSearchText, setAppliedSearch ] = React.useState(undefined);
-  const [ preventExternalRefresh, setPreventExternalRefresh ] = React.useState(true);
+  const [ showNotificationRecordsOnly, setShowNotificationRecordsOnly ] = React.useState(false);
+  const isFirstRun = React.useRef(true);
 
   const getConfigId = async () => {
     if (configState.configId) {
@@ -225,17 +225,11 @@ export const Board = () => {
     }
   };
 
+  // This is used for reinitializing when selected config changes
   React.useEffect(() => {
     setDisplayState("simple");
     initializeConfig();
   }, [ configState.configId ]);
-
-  const verifyDeletion = () => setShowDeletionVerification(true);
-  const hideDeletionVerification = () => setShowDeletionVerification(false);
-
-  const deleteRecord = () => {
-
-  };
 
   const setView = (event: React.FormEvent<HTMLDivElement>, item: IDropdownOption) => {
     const viewId = item.key;
@@ -311,14 +305,18 @@ export const Board = () => {
     await refresh(appDispatch, appState, configState, actionDispatch, actionState);
   };
 
-  // Refresh board when external filter IDs change
+  // Refresh board when external dataset refreshed
   React.useEffect(() => {
-      if (preventExternalRefresh) {
-        setPreventExternalRefresh(false);
-        return; 
-      }
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+    
+    if (!configState || !configState.config) {
+      return;
+    }
 
-      refreshBoard();
+    refreshBoard();
   }, [ appState.primaryDataIds ]);
 
   const openConfigSelector = () => {
@@ -326,11 +324,20 @@ export const Board = () => {
   };
 
   const advancedTileStyle = React.useMemo(() => ({ margin: "5px" as React.ReactText } as ICardStyles), []);
+  
+  const filterForSearchText = (d: BoardLane) => !appliedSearchText
+    ? d
+    : { ...d, data: d.data.filter(data => Object.keys(data).some(k => `${data[k]}`.toLowerCase().includes(appliedSearchText.toLowerCase()))) }
 
+  const filterForNotifications = (d: BoardLane) => !showNotificationRecordsOnly 
+    ? d 
+    : { ...d, data: d.data.filter(data => appState.notifications && appState.notifications[data[configState.metadata.PrimaryIdAttribute]] && appState.notifications[data[configState.metadata.PrimaryIdAttribute]].length)};
+  
   const advancedData = React.useMemo(() => {
     return displayState === "advanced" && appState.boardData &&
     appState.boardData.filter(d => !stateFilters.length || stateFilters.some(f => f.Value === d.option.State))
-    .map(d => !appliedSearchText ? d : { ...d, data: d.data.filter(data => Object.keys(data).some(k => `${data[k]}`.toLowerCase().includes(appliedSearchText.toLowerCase()))) })
+    .map(filterForSearchText)
+    .map(filterForNotifications)
     .reduce((all, curr) => all.concat(curr.data.filter(d => appState.secondaryData.some(t => t.data.some(tt => tt[`_${configState.config.secondaryEntity.parentLookup}_value`] === d[configState.metadata.PrimaryIdAttribute])))
     .map(d => {
       const secondaryData = appState.secondaryData.map(s => ({ ...s, data: s.data.filter(sd => sd[`_${configState.config.secondaryEntity.parentLookup}_value`] === d[configState.metadata.PrimaryIdAttribute])}));
@@ -363,12 +370,13 @@ export const Board = () => {
         secondaryData={secondaryData} />
       );
     })), []);
-  }, [displayState, appState.boardData, appState.secondaryData, stateFilters, appliedSearchText, appState.notifications, appState.subscriptions, actionState.selectedSecondaryForm, configState.configId]);
+  }, [displayState, showNotificationRecordsOnly, appState.boardData, appState.secondaryData, stateFilters, appliedSearchText, appState.notifications, appState.subscriptions, actionState.selectedSecondaryForm, configState.configId]);
 
   const simpleData = React.useMemo(() => {
     return appState.boardData && appState.boardData
     .filter(d => !stateFilters.length || stateFilters.some(f => f.Value === d.option.State))
-    .map(d => !appliedSearchText ? d : { ...d, data: d.data.filter(data => Object.keys(data).some(k => `${data[k]}`.toLowerCase().includes(appliedSearchText.toLowerCase()))) })
+    .map(filterForSearchText)
+    .map(filterForNotifications)
     .map(d => <Lane
       notifications={appState.notifications}
       key={`lane_${d.option?.Value ?? "fallback"}`}
@@ -380,7 +388,7 @@ export const Board = () => {
       config={configState.config.primaryEntity}
       separatorMetadata={configState.separatorMetadata}
       lane={{...d, data: d.data.filter(r => displayState === "simple" || appState.secondaryData && appState.secondaryData.every(t => t.data.every(tt => tt[`_${configState.config.secondaryEntity.parentLookup}_value`] !== r[configState.metadata.PrimaryIdAttribute])))}} />);
-  }, [displayState, appState.boardData, appState.subscriptions, stateFilters, appState.secondaryData, appliedSearchText, appState.notifications, configState.configId]);
+  }, [displayState, showNotificationRecordsOnly, appState.boardData, appState.subscriptions, stateFilters, appState.secondaryData, appliedSearchText, appState.notifications, configState.configId]);
 
   const currentNotifications = React.useMemo(() => {
     if (!configState.config) {
@@ -420,6 +428,10 @@ export const Board = () => {
     root: {
       margin: "5px",
     },
+  };
+
+  const toggleShowNotificationRecordsOnly = () => {
+    setShowNotificationRecordsOnly(!showNotificationRecordsOnly);
   };
 
   const navItems: Array<IOverflowSetItemProps> = [
@@ -506,7 +518,7 @@ export const Board = () => {
     ( (configState.config?.primaryEntity.subscriptionLookup && configState.config?.primaryEntity.notificationLookup) || (configState.config?.secondaryEntity && configState.config?.secondaryEntity.subscriptionLookup && configState.config?.secondaryEntity.notificationLookup)
       ? {
         key: 'notificationIndicator',
-        onRender: () =>  <IconButton iconProps={{ iconName: "RingerSolid", style: { color: (currentNotifications[0].length || currentNotifications[1].length) ? "red" : "inherit" } }} styles={navItemStyles}  />
+        onRender: () =>  <IconButton onClick={toggleShowNotificationRecordsOnly} iconProps={{ iconName: showNotificationRecordsOnly ? "RingerSolid" : "Ringer", style: { color: (currentNotifications[0].length || currentNotifications[1].length) ? "red" : "inherit" } }} styles={navItemStyles}  />
       }
       : null
     ),
@@ -543,9 +555,6 @@ export const Board = () => {
 
   return (
     <div style={{height: "100%", display: "flex", flexDirection: "column" }}>
-      <UserInputModal title="Verify Deletion" yesCallBack={deleteRecord} finally={hideDeletionVerification} show={showDeletionVerification}>
-        <div>Are you sure you want to delete  '{actionState.selectedRecord && actionState.selectedRecord.name}' (ID: {actionState.selectedRecord && actionState.selectedRecord.id})?</div>
-      </UserInputModal>
       <OverflowSet
         role="menubar"
         styles={{root: {backgroundColor: "#f8f9fa"}}}

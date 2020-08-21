@@ -18,6 +18,7 @@ export type AppStateProps = {
     subscriptions?: {[key: string]: Array<Subscription>};
     notifications?: {[key: string]: Array<Notification>};
     primaryDataIds?: Array<string>;
+    primaryEntityId?: string;
 };
 
 type AppContextProps = {

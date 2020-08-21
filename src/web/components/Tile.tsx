@@ -83,41 +83,42 @@ const TileRender = (props: TileProps) => {
                     return;
                 }
 
-                let preventDefault = false;
+                try {
+                    let preventDefault = false;
 
-                if (props.config.transitionCallback) {
-                    const eventContext = {
-                        ...context,
-                        target: dropResult.option
-                    };
+                    if (props.config.transitionCallback) {
+                        const eventContext = {
+                            ...context,
+                            target: dropResult.option
+                        };
 
-                    const funcRef = accessFunc(props.config.transitionCallback) as any;
+                        const funcRef = accessFunc(props.config.transitionCallback) as any;
 
-                    const result = await Promise.resolve(funcRef(eventContext));
-                    preventDefault = result?.preventDefault;
-                }
-
-                if (preventDefault) {
-                    actionDispatch({ type: "setWorkIndicator", payload: false });
-                }
-                else {
-                    actionDispatch({ type: "setWorkIndicator", payload: true });
-                    const itemId = item.id;
-                    const targetOption = dropResult.option as Option;
-                    const update: any = { [props.separatorMetadata.LogicalName]: targetOption.Value };
-
-                    if (props.separatorMetadata.LogicalName === "statuscode") {
-                        update["statecode"] = targetOption.State;
+                        const result = await Promise.resolve(funcRef(eventContext));
+                        preventDefault = result?.preventDefault;
                     }
 
-                    await WebApiClient.Update({ entityName: props.metadata.LogicalName, entityId: itemId, entity: update })
-                    .then((r: any) => {
+                    if (preventDefault) {
                         actionDispatch({ type: "setWorkIndicator", payload: false });
-                        return props.refresh();
-                    })
-                    .catch((e: any) => {
+                    }
+                    else {
+                        actionDispatch({ type: "setWorkIndicator", payload: true });
+                        const itemId = item.id;
+                        const targetOption = dropResult.option as Option;
+                        const update: any = { [props.separatorMetadata.LogicalName]: targetOption.Value };
+
+                        if (props.separatorMetadata.LogicalName === "statuscode") {
+                            update["statecode"] = targetOption.State;
+                        }
+
+                        await WebApiClient.Update({ entityName: props.metadata.LogicalName, entityId: itemId, entity: update });
+                        
                         actionDispatch({ type: "setWorkIndicator", payload: false });
-                    });
+                        await props.refresh();
+                    }
+                } catch (ex) {
+                    actionDispatch({ type: "setWorkIndicator", payload: false });
+                    Xrm.Navigation.openAlertDialog({ text: ex.message, title: "An error occured" });
                 }
             };
 

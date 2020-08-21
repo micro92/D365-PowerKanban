@@ -124,7 +124,7 @@ export const fetchData = async (entityName: string, fetchXml: string, swimLaneSo
       return [];
     }
 
-    const fetches = prepareFetch(fetchXml, swimLaneSource, form, metadata, (!isPrimary || appState.primaryDataIds == null)
+    const fetches = prepareFetch(fetchXml, swimLaneSource, form, metadata, (!isPrimary || appState.primaryDataIds == null || !appState.primaryEntityId)
       ? options
       : {
           ...options, 
@@ -284,7 +284,7 @@ export const refresh = async (appDispatch: AppStateDispatch, appState: AppStateP
     appDispatch({ type: "setNotifications", payload: notifications });
   }
   catch (e) {
-    Xrm.Utility.alertDialog(e?.message ?? e, () => {  });
+    Xrm.Navigation.openAlertDialog({ text: e?.message ?? e, title: "An error occured" });
   }
 
   actionDispatch({ type: "setWorkIndicator", payload: false });
