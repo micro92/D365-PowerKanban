@@ -42,6 +42,14 @@ Todos:
 ![image](https://user-images.githubusercontent.com/4287938/90894676-468c1400-e3c1-11ea-9089-45ca0cca9f9c.png)
 
 
+## Open in Modal
+![image](https://user-images.githubusercontent.com/4287938/90894901-94088100-e3c1-11ea-9c00-cd9cb65d3420.png)
+
+
+## Search with highlighting
+![image](https://user-images.githubusercontent.com/4287938/90894995-b7cbc700-e3c1-11ea-8ed2-4373dec6ad7c.png)
+
+
 ## Notification List
 ![image](https://user-images.githubusercontent.com/4287938/90894792-6e7b7780-e3c1-11ea-8520-2629a9849732.png)
 
