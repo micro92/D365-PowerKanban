@@ -329,7 +329,10 @@ A plugin for notifying users when the description of a case (that they subscribe
     "subscriptionLookupName": "oss_incidentid",
     "notificationLookupName": "oss_incidentid",
     "notifyCurrentUser": false,
-    "capturedFields": [ "description" ]
+    "capturedFields": [ "description" ],
+    "messageConfig": {
+        "default": "This case was updated"
+    }
 }
 ```
 
@@ -339,9 +342,29 @@ A plugin configuration for notifying users when a new task is created regarding 
 ```JSON
 {
     "parentLookupName": "regardingobjectid",
-    "subscriptionLookupName": "oss_taskid",
-    "notificationLookupName": "oss_taskid",
-    "notifyCurrentUser": false,
-    "capturedFields": [ "description" ]
+    "subscriptionLookupName": "oss_incidentid",
+    "notificationLookupName": "oss_incidentid",
+    "notifyCurrentUser": true,
+    "messageConfig": {
+        "default": "A new task regarding this case has been created"
+    }
 }
 ```
+
+### Conditional events
+You might also want to only create a notification when the record matches some given criteria.
+You can achieve this (since v0.9.12) using a [XTL]() expression:
+
+```JSON
+{
+    "parentLookupName": "regardingobjectid",
+    "subscriptionLookupName": "oss_incidentid",
+    "notificationLookupName": "oss_incidentid",
+    "notifyCurrentUser": true,
+    "xtlCondition": "IsEqual(Value('directioncode'), false)",
+    "messageConfig": {
+        "default": "A new mail regarding this case has been received"
+    }
+}
+```
+> Above example registered on creation of email entity only creates a notification, when the email is of direction incoming.
