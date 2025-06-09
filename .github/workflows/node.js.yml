@@ -27,9 +27,11 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - run: npm ci
+    - name: CI
       working-directory: ./src/web
-    - run: npm run build --if-present --buildMode production
+      run: npm ci
+    - name: Build
       working-directory: ./src/web
+      run: npm run build --if-present --buildMode production
     - run: npm test
       working-directory: ./sec/web
