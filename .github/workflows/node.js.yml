@@ -34,6 +34,9 @@ jobs:
     - name: insrall
       working-directory: ./src/web
       run: npm install
+    - name: insrall2
+      working-directory: ./src/web
+      run: npm install lodash --save
     - name: Build
       working-directory: ./src/web
       run: npm run build  #--buildMode production
